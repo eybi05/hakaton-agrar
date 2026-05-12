@@ -14,192 +14,216 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
-const FEAT_W = width * 0.70;
 
+// ── Subscription plans ────────────────────────────────────────────────────────
+const PLANS = [
+  {
+    id: '1',
+    duration: '1 Day',
+    price: '$5',
+    perDay: '$5/day',
+    badge: null,
+    features: ['Full access', 'All categories', 'Map view'],
+    gradient: ['#3A3A5C', '#5C5C8A'] as [string, string],
+  },
+  {
+    id: '2',
+    duration: '10 Days',
+    price: '$39',
+    perDay: '$3.9/day',
+    badge: 'Most Popular',
+    features: ['Full access', 'All categories', 'Map view', 'Offline mode', 'Priority support'],
+    gradient: [COLORS.primaryDark, COLORS.primaryLight] as [string, string],
+  },
+  {
+    id: '3',
+    duration: '30 Days',
+    price: '$199',
+    perDay: '$6.6/day',
+    badge: 'Best Value',
+    features: ['Full access', 'All categories', 'Map view', 'Offline mode', 'Priority support', 'Exclusive deals'],
+    gradient: ['#7B4A00', '#E8A020'] as [string, string],
+  },
+];
+
+// ── Categories ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { id: '0', label: 'All',               icon: 'grid-outline'          },
-  { id: '1', label: 'Farms',             icon: 'leaf-outline'          },
-  { id: '2', label: 'Village Tours',     icon: 'home-outline'          },
-  { id: '3', label: 'Horse Riding',      icon: 'paw'                   },
-  { id: '4', label: 'Organic Food',      icon: 'nutrition'             },
-  { id: '5', label: 'Camping',           icon: 'flame-outline'         },
-  { id: '6', label: 'Local Hotels',      icon: 'bed-outline'           },
-  { id: '7', label: 'Traditional Foods', icon: 'restaurant-outline'    },
-  { id: '8', label: 'Nature Activities', icon: 'partly-sunny-outline'  },
+  { id: '1', label: 'Farms',              icon: 'leaf-outline'          },
+  { id: '2', label: 'Village Tours',      icon: 'home-outline'          },
+  { id: '3', label: 'Horse Riding',       icon: 'paw'                   },
+  { id: '4', label: 'Organic Food',       icon: 'nutrition'             },
+  { id: '5', label: 'Camping',            icon: 'flame-outline'         },
+  { id: '6', label: 'Local Hotels',       icon: 'bed-outline'           },
+  { id: '7', label: 'Traditional Foods',  icon: 'restaurant-outline'    },
+  { id: '8', label: 'Nature Activities',  icon: 'partly-sunny-outline'  },
 ];
 
-const FEATURED = [
-  { id: '1', name: 'Green Valley Farm',   region: 'Sheki',   price: '₼45', rating: '4.8', tag: 'Organic',   gradient: ['#0D3D24', '#2D9D63'] as [string, string] },
-  { id: '2', name: 'Sunrise Horse Ranch', region: 'Gabala',  price: '₼60', rating: '4.9', tag: 'Adventure', gradient: ['#5C3317', '#E8773A'] as [string, string] },
-  { id: '3', name: 'Mountain Camp Site',  region: 'Lahij',   price: '₼30', rating: '4.7', tag: 'Camping',   gradient: ['#1A3A6E', '#4FC3F7'] as [string, string] },
-  { id: '4', name: 'Pomegranate Estate',  region: 'Goychay', price: '₼50', rating: '4.9', tag: 'Harvest',   gradient: ['#7B1E1E', '#E74C3C'] as [string, string] },
-];
-
+// ── Popular places ────────────────────────────────────────────────────────────
 const POPULAR = [
-  { id: '1', name: 'Lahij Coppersmith Village', region: 'Lahij',  price: '₼30', rating: '4.9', color: '#5C6BC0', icon: 'home-outline'          },
-  { id: '2', name: 'Honey & Herb Experience',   region: 'Gabala', price: '₼25', rating: '4.7', color: '#D35400', icon: 'nutrition'             },
-  { id: '3', name: 'Tufandag Cable Car Trek',   region: 'Gabala', price: '₼35', rating: '4.8', color: '#27AE60', icon: 'partly-sunny-outline'  },
-  { id: '4', name: 'Sheki Piti Clay Kitchen',   region: 'Sheki',  price: '₼30', rating: '4.9', color: '#C0392B', icon: 'restaurant-outline'    },
+  { id: '1', name: 'Lahij Coppersmith Village', region: 'Lahij',  price: '₼30', rating: '4.9', color: '#5C6BC0', icon: 'home-outline',         category: 'Village Tours'      },
+  { id: '2', name: 'Honey & Herb Experience',   region: 'Gabala', price: '₼25', rating: '4.7', color: '#D35400', icon: 'nutrition',            category: 'Organic Food'       },
+  { id: '3', name: 'Tufandag Cable Car Trek',   region: 'Gabala', price: '₼35', rating: '4.8', color: '#27AE60', icon: 'partly-sunny-outline', category: 'Nature Activities'  },
+  { id: '4', name: 'Sheki Piti Clay Kitchen',   region: 'Sheki',  price: '₼30', rating: '4.9', color: '#C0392B', icon: 'restaurant-outline',   category: 'Traditional Foods'  },
+  { id: '5', name: 'Sunrise Horse Ranch',       region: 'Gabala', price: '₼60', rating: '4.9', color: '#A67C52', icon: 'paw',                  category: 'Horse Riding'       },
+  { id: '6', name: 'Green Valley Farm',         region: 'Sheki',  price: '₼45', rating: '4.8', color: COLORS.primary, icon: 'leaf-outline',    category: 'Farms'              },
 ];
 
 type Props = { navigation: any };
 
 export default function HomeScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
-  const [activeCat, setActiveCat] = useState('0');
+  const [selectedPlan, setSelectedPlan] = useState('2');
+
+  const filteredPopular = POPULAR.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.region.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* ── Hero ────────────────────────────────────────────────────── */}
-        <LinearGradient
-          colors={[COLORS.primaryDark, COLORS.primary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          <View style={[styles.bubble, { width: 220, height: 220, top: -70, right: -60 }]} />
-          <View style={[styles.bubble, { width: 100, height: 100, bottom: 10, left: -30 }]} />
-
-          <View style={styles.heroTop}>
-            <View>
-              <View style={styles.locRow}>
-                <Ionicons name="location" size={13} color={COLORS.goldLight} />
-                <Text style={styles.locText}>Baku, Azerbaijan</Text>
-              </View>
-              <Text style={styles.greeting}>Good morning 👋</Text>
-              <Text style={styles.heroTitle}>Find Your Farm Escape</Text>
-            </View>
-            <TouchableOpacity style={styles.notifBtn}>
-              <Ionicons name="notifications-outline" size={20} color={COLORS.white} />
-              <View style={styles.notifDot} />
-            </TouchableOpacity>
+        {/* ── Top bar ──────────────────────────────────────────────────── */}
+        <View style={styles.topBar}>
+          <View>
+            <Text style={styles.greeting}>Good morning 👋</Text>
+            <Text style={styles.topTitle}>Find your farm escape</Text>
           </View>
-
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={18} color={COLORS.textLight} style={{ marginRight: 8 }} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search farms, tours, experiences…"
-              placeholderTextColor={COLORS.textLight}
-              value={search}
-              onChangeText={setSearch}
-            />
-            <TouchableOpacity style={styles.filterChip}>
-              <Ionicons name="options-outline" size={15} color={COLORS.primary} />
-              <Text style={styles.filterChipText}>Filter</Text>
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-
-        {/* ── Quick stats (overlaps hero) ──────────────────────────────── */}
-        <View style={styles.statsRow}>
-          <TouchableOpacity style={styles.statHalf} activeOpacity={0.85}>
-            <View style={[styles.statIcon, { backgroundColor: COLORS.primaryXLight }]}>
-              <Ionicons name="wallet-outline" size={18} color={COLORS.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.statLabel}>Balance</Text>
-              <Text style={styles.statValue}>₼ 250.00</Text>
-            </View>
-            <View style={styles.statBadge}>
-              <Text style={styles.statBadgeText}>Top Up</Text>
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.statDivider} />
-
-          <TouchableOpacity style={styles.statHalf} activeOpacity={0.85}>
-            <View style={[styles.statIcon, { backgroundColor: '#E8EAF6' }]}>
-              <Ionicons name="calendar-outline" size={18} color="#5C6BC0" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.statLabel}>Bookings</Text>
-              <Text style={[styles.statValue, { color: '#5C6BC0' }]}>3 Active</Text>
-            </View>
-            <View style={[styles.statBadge, { backgroundColor: '#E8EAF6' }]}>
-              <Text style={[styles.statBadgeText, { color: '#5C6BC0' }]}>View</Text>
-            </View>
+          <TouchableOpacity style={styles.notifBtn}>
+            <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+            <View style={styles.notifDot} />
           </TouchableOpacity>
         </View>
 
-        {/* ── Categories ───────────────────────────────────────────────── */}
+        {/* ── Search bar ───────────────────────────────────────────────── */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={18} color={COLORS.textLight} style={{ marginRight: 10 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search farms, tours, experiences…"
+            placeholderTextColor={COLORS.textLight}
+            value={search}
+            onChangeText={setSearch}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.filterBtn}>
+            <Ionicons name="options-outline" size={17} color={COLORS.white} />
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Buy Subscription ─────────────────────────────────────────── */}
         <View style={styles.secRow}>
-          <Text style={styles.secTitle}>Browse Categories</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+          <Text style={styles.secTitle}>Buy Subscription</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>Learn more</Text>
+          </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catScroll}>
-          {CATEGORIES.map((cat) => {
-            const active = activeCat === cat.id;
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.planScroll}
+        >
+          {PLANS.map((plan) => {
+            const active = selectedPlan === plan.id;
             return (
               <TouchableOpacity
-                key={cat.id}
-                onPress={() => {
-                  setActiveCat(cat.id);
-                  if (cat.id !== '0') navigation.navigate('Category', { category: cat.label });
-                }}
-                style={[styles.catPill, active && styles.catPillActive]}
-                activeOpacity={0.75}
+                key={plan.id}
+                onPress={() => setSelectedPlan(plan.id)}
+                activeOpacity={0.88}
+                style={[styles.planCard, active && styles.planCardActive]}
               >
-                <Ionicons name={cat.icon as any} size={14} color={active ? COLORS.white : COLORS.textMedium} />
-                <Text style={[styles.catPillText, active && styles.catPillTextActive]}>{cat.label}</Text>
+                <LinearGradient
+                  colors={plan.gradient}
+                  style={styles.planGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  {/* Decorative circle */}
+                  <View style={styles.planDeco} />
+
+                  {/* Badge */}
+                  {plan.badge && (
+                    <View style={styles.planBadge}>
+                      <Text style={styles.planBadgeText}>{plan.badge}</Text>
+                    </View>
+                  )}
+
+                  {/* Price */}
+                  <View style={styles.planPriceRow}>
+                    <Text style={styles.planPrice}>{plan.price}</Text>
+                    <Text style={styles.planPerDay}>{plan.perDay}</Text>
+                  </View>
+
+                  {/* Duration */}
+                  <Text style={styles.planDuration}>{plan.duration}</Text>
+
+                  {/* Divider */}
+                  <View style={styles.planDivider} />
+
+                  {/* Features */}
+                  <View style={styles.planFeatures}>
+                    {plan.features.map((f) => (
+                      <View key={f} style={styles.planFeatureRow}>
+                        <Ionicons name="checkmark-circle" size={13} color="rgba(255,255,255,0.85)" />
+                        <Text style={styles.planFeatureText}>{f}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* CTA */}
+                  <TouchableOpacity style={styles.planBtn} activeOpacity={0.85}>
+                    <Text style={[styles.planBtnText, { color: plan.gradient[0] }]}>Get Started</Text>
+                  </TouchableOpacity>
+                </LinearGradient>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* ── Featured experiences ─────────────────────────────────────── */}
+        {/* ── Browse Categories ────────────────────────────────────────── */}
         <View style={styles.secRow}>
-          <Text style={styles.secTitle}>Featured Experiences</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+          <Text style={styles.secTitle}>Browse Categories</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>See all</Text>
+          </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featScroll}>
-          {FEATURED.map((item) => (
-            <TouchableOpacity key={item.id} style={{ width: FEAT_W }} activeOpacity={0.88}>
-              <LinearGradient colors={item.gradient} style={styles.featCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <View style={styles.featDeco} />
-                <View style={styles.featTop}>
-                  <View style={styles.featTagBadge}>
-                    <Text style={styles.featTagText}>{item.tag}</Text>
-                  </View>
-                  <View style={styles.ratingBadge}>
-                    <Ionicons name="star" size={10} color="#FFD700" />
-                    <Text style={styles.ratingText}>{item.rating}</Text>
-                  </View>
-                </View>
-                <View style={styles.featBottom}>
-                  <Text style={styles.featName}>{item.name}</Text>
-                  <View style={styles.featLocRow}>
-                    <Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.8)" />
-                    <Text style={styles.featLoc}>{item.region}, Azerbaijan</Text>
-                  </View>
-                  <View style={styles.featFooter}>
-                    <Text style={styles.featPrice}>{item.price}<Text style={styles.featPriceSub}> /person</Text></Text>
-                    <TouchableOpacity style={styles.bookBtn}>
-                      <Text style={styles.bookBtnText}>Book Now</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </LinearGradient>
+        <View style={styles.catGrid}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.catCard}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('Category', { category: cat.label })}
+            >
+              <Ionicons name={cat.icon as any} size={22} color={COLORS.primary} />
+              <Text style={styles.catLabel} numberOfLines={2}>{cat.label}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
 
-        {/* ── Popular near you ─────────────────────────────────────────── */}
+        {/* ── Popular Near You ─────────────────────────────────────────── */}
         <View style={styles.secRow}>
           <Text style={styles.secTitle}>Popular Near You</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>See all</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.popularWrap}>
-          {POPULAR.map((item, i) => (
+          {(search.length > 0 ? filteredPopular : POPULAR).map((item, i) => (
             <TouchableOpacity
               key={item.id}
               style={[styles.popularRow, i < POPULAR.length - 1 && styles.popularBorder]}
               activeOpacity={0.8}
+              onPress={() => navigation.navigate('Category', { category: item.category })}
             >
               <View style={[styles.popularThumb, { backgroundColor: item.color + '18' }]}>
                 <Ionicons name={item.icon as any} size={22} color={item.color} />
@@ -209,6 +233,8 @@ export default function HomeScreen({ navigation }: Props) {
                 <View style={styles.popularMetaRow}>
                   <Ionicons name="location-outline" size={11} color={COLORS.textLight} />
                   <Text style={styles.popularMeta}>{item.region}</Text>
+                  <View style={styles.metaDot} />
+                  <Text style={[styles.popularMeta, { color: item.color }]}>{item.category}</Text>
                 </View>
               </View>
               <View style={styles.popularRight}>
@@ -220,9 +246,16 @@ export default function HomeScreen({ navigation }: Props) {
               </View>
             </TouchableOpacity>
           ))}
+
+          {search.length > 0 && filteredPopular.length === 0 && (
+            <View style={styles.emptySearch}>
+              <Ionicons name="search-outline" size={32} color={COLORS.textLight} />
+              <Text style={styles.emptyText}>No results for "{search}"</Text>
+            </View>
+          )}
         </View>
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -230,63 +263,42 @@ export default function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  scroll: { paddingBottom: 8 },
 
-  // Hero
-  hero: {
-    paddingTop: 12, paddingHorizontal: 20, paddingBottom: 36,
-    overflow: 'hidden',
+  // Top bar
+  topBar: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 14, paddingBottom: 10,
   },
-  bubble: {
-    position: 'absolute', borderRadius: 200,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  heroTop: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 18,
-  },
-  locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
-  locText: { fontSize: 12, color: 'rgba(255,255,255,0.72)', fontWeight: '500' },
-  greeting: { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginBottom: 2 },
-  heroTitle: { fontSize: 22, fontWeight: '800', color: COLORS.white, letterSpacing: -0.4 },
+  greeting: { fontSize: 13, color: COLORS.textLight, marginBottom: 2 },
+  topTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textDark, letterSpacing: -0.3 },
   notifBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    justifyContent: 'center', alignItems: 'center',
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: COLORS.card, justifyContent: 'center', alignItems: 'center',
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1, shadowRadius: 6, elevation: 3,
   },
   notifDot: {
     position: 'absolute', top: 8, right: 8,
     width: 8, height: 8, borderRadius: 4,
-    backgroundColor: '#E74C3C', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: COLORS.error, borderWidth: 1.5, borderColor: COLORS.card,
   },
+
+  // Search bar
   searchBar: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 14,
-    paddingHorizontal: 14, height: 50,
-    shadowColor: 'rgba(0,0,0,0.25)', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1, shadowRadius: 10, elevation: 8,
+    backgroundColor: COLORS.card, borderRadius: 14,
+    marginHorizontal: 20, marginBottom: 4,
+    paddingLeft: 16, paddingRight: 6, paddingVertical: 6,
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1, shadowRadius: 8, elevation: 3,
   },
-  searchInput: { flex: 1, fontSize: 14, color: COLORS.textDark },
-  filterChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: COLORS.primaryXLight,
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.textDark, paddingVertical: 6 },
+  filterBtn: {
+    width: 38, height: 38, borderRadius: 10,
+    backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center',
+    marginLeft: 6,
   },
-  filterChipText: { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row', marginHorizontal: 16, marginTop: -22,
-    backgroundColor: COLORS.card, borderRadius: 16, overflow: 'hidden',
-    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1, shadowRadius: 14, elevation: 7,
-  },
-  statHalf: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
-  statDivider: { width: 1, backgroundColor: COLORS.divider, marginVertical: 10 },
-  statIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  statLabel: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
-  statValue: { fontSize: 15, fontWeight: '700', color: COLORS.textDark },
-  statBadge: { backgroundColor: COLORS.primaryXLight, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  statBadgeText: { fontSize: 11, fontWeight: '600', color: COLORS.primary },
 
   // Section header
   secRow: {
@@ -296,52 +308,66 @@ const styles = StyleSheet.create({
   secTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textDark },
   seeAll: { fontSize: 13, color: COLORS.primaryLight, fontWeight: '600' },
 
-  // Category pills
-  catScroll: { paddingHorizontal: 16, gap: 8 },
-  catPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 9,
-    backgroundColor: COLORS.card, borderRadius: 24,
-    borderWidth: 1, borderColor: COLORS.border,
-    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 1, shadowRadius: 3, elevation: 1,
+  // Subscription plans
+  planScroll: { paddingHorizontal: 16, gap: 12 },
+  planCard: {
+    width: width * 0.60, borderRadius: 20,
+    shadowColor: 'rgba(0,0,0,0.2)', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1, shadowRadius: 12, elevation: 6,
   },
-  catPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  catPillText: { fontSize: 13, fontWeight: '600', color: COLORS.textMedium },
-  catPillTextActive: { color: COLORS.white },
+  planCardActive: {
+    shadowColor: 'rgba(0,0,0,0.35)', shadowRadius: 16, elevation: 10,
+    transform: [{ scale: 1.02 }],
+  },
+  planGradient: {
+    borderRadius: 20, padding: 18, overflow: 'hidden', gap: 10,
+  },
+  planDeco: {
+    position: 'absolute', top: -40, right: -40,
+    width: 130, height: 130, borderRadius: 65,
+    backgroundColor: 'rgba(255,255,255,0.09)',
+  },
+  planBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+  },
+  planBadgeText: { fontSize: 11, color: COLORS.white, fontWeight: '700' },
 
-  // Featured cards
-  featScroll: { paddingHorizontal: 16, gap: 12 },
-  featCard: {
-    height: 195, borderRadius: 20, padding: 16,
-    justifyContent: 'space-between', overflow: 'hidden',
+  planPriceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  planPrice: { fontSize: 34, fontWeight: '900', color: COLORS.white, letterSpacing: -1 },
+  planPerDay: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 5 },
+  planDuration: { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: '700' },
+
+  planDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.18)', marginVertical: 2 },
+
+  planFeatures: { gap: 6 },
+  planFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  planFeatureText: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
+
+  planBtn: {
+    backgroundColor: COLORS.white, borderRadius: 12,
+    paddingVertical: 11, alignItems: 'center', marginTop: 4,
   },
-  featDeco: {
-    position: 'absolute', top: -45, right: -45,
-    width: 160, height: 160, borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+  planBtnText: { fontSize: 14, fontWeight: '700' },
+
+  // Category grid
+  catGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: 16, gap: 10,
   },
-  featTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  featTagBadge: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
+  catCard: {
+    width: (width - 52) / 4,
+    backgroundColor: COLORS.card, borderRadius: 14,
+    paddingVertical: 14, alignItems: 'center', gap: 7,
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1, shadowRadius: 4, elevation: 1,
+    borderWidth: 1, borderColor: COLORS.divider,
   },
-  featTagText: { fontSize: 11, color: COLORS.white, fontWeight: '600' },
-  ratingBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-    paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10,
+  catLabel: {
+    fontSize: 10, fontWeight: '600', color: COLORS.textMedium,
+    textAlign: 'center', lineHeight: 13,
   },
-  ratingText: { fontSize: 11, color: COLORS.white, fontWeight: '600' },
-  featBottom: { gap: 4 },
-  featName: { fontSize: 17, fontWeight: '700', color: COLORS.white },
-  featLocRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  featLoc: { fontSize: 11, color: 'rgba(255,255,255,0.8)' },
-  featFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  featPrice: { fontSize: 18, fontWeight: '800', color: COLORS.white },
-  featPriceSub: { fontSize: 11, fontWeight: '400', color: 'rgba(255,255,255,0.7)' },
-  bookBtn: { backgroundColor: COLORS.white, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  bookBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
 
   // Popular list
   popularWrap: {
@@ -349,15 +375,22 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1, shadowRadius: 8, elevation: 2, overflow: 'hidden',
   },
-  popularRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
+  popularRow: {
+    flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12,
+  },
   popularBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.divider },
   popularThumb: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   popularInfo: { flex: 1 },
   popularName: { fontSize: 14, fontWeight: '600', color: COLORS.textDark, marginBottom: 3 },
-  popularMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  popularMeta: { fontSize: 12, color: COLORS.textLight },
+  popularMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  popularMeta: { fontSize: 11, color: COLORS.textLight },
+  metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: COLORS.border },
   popularRight: { alignItems: 'flex-end', gap: 3 },
   popularPrice: { fontSize: 15, fontWeight: '700', color: COLORS.primary },
   popularRatRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   popularRat: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
+
+  // Empty
+  emptySearch: { padding: 32, alignItems: 'center', gap: 8 },
+  emptyText: { fontSize: 14, color: COLORS.textLight, textAlign: 'center' },
 });
