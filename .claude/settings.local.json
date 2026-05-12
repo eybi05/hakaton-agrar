@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npx create-expo-app@latest MyApp --template blank-typescript 2>&1)",
+      "PowerShell(npm install @react-navigation/native @react-navigation/bottom-tabs react-native-screens react-native-safe-area-context expo-linear-gradient --legacy-peer-deps)",
+      "Bash(mkdir -p c:/Users/ebulf/OneDrive/Desktop/team/MyApp/src/theme c:/Users/ebulf/OneDrive/Desktop/team/MyApp/src/screens c:/Users/ebulf/OneDrive/Desktop/team/MyApp/src/navigation c:/Users/ebulf/OneDrive/Desktop/team/MyApp/src/components)",
+      "PowerShell(npx expo start --tunnel 2>&1)",
+      "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ebulf\\OneDrive\\Desktop\\team\\MyApp\\src"
+    ]
+  }
+}
