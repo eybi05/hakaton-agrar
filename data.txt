@@ -5,3 +5,6 @@ git push
 
 #git acmaq istesez
 git pull         update 
+
+
+https://docs.google.com/document/d/1l_gaGyzpSzJhKvTT4ps4qCf2nGtqFwHCI45wCHxj-1s/edit?usp=sharing
