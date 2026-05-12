@@ -1,33 +1,50 @@
-// AgroTourism app color palette — nature, farming, and travel inspired
 export const COLORS = {
   // Primary greens
-  primary: '#2D6A4F',
-  primaryLight: '#52B788',
-  primaryXLight: '#D8F3DC',
+  primary: '#1B5E3B',
+  primaryDark: '#0D3D24',
+  primaryLight: '#2D9D63',
+  primaryXLight: '#C8F0D8',
 
-  // Accent / warm tones
-  accent: '#F4A261',
-  accentLight: '#FFF3E0',
-  brown: '#A67C52',
+  // Gold accent — missions, ratings, premium
+  gold: '#B8860B',
+  goldLight: '#F5C518',
+  goldXLight: '#FFF8E1',
+
+  // Historical blue
+  historical: '#1A3A6E',
+  historicalLight: '#3B6CB0',
+  historicalXLight: '#E3ECFA',
+
+  // AI purple
+  aiPurple: '#4A1D96',
+  aiLight: '#7C3AED',
+  aiXLight: '#EDE9FE',
+
+  // Warm accent — farming, food, adventure
+  accent: '#E8773A',
+  accentLight: '#FFF0E6',
+  brown: '#8B5E3C',
 
   // Backgrounds
-  background: '#F5F7F2',
+  background: '#F4F7F4',
   card: '#FFFFFF',
+  cardAlt: '#F8FAF8',
   inputBg: '#EEF2EE',
 
   // Text
-  textDark: '#1A2E1A',
-  textMedium: '#4A5C4A',
-  textLight: '#8FA08F',
+  textDark: '#0F1F0F',
+  textMedium: '#3A5040',
+  textLight: '#7A967A',
 
   // Status
-  success: '#52B788',
-  warning: '#F4A261',
-  error: '#E07070',
+  success: '#2D9D63',
+  warning: '#E8773A',
+  error: '#D94F4F',
 
   // Misc
   white: '#FFFFFF',
-  border: '#E0EAE0',
-  shadow: 'rgba(45, 106, 79, 0.12)',
-  overlay: 'rgba(0,0,0,0.35)',
+  border: '#DDE8DD',
+  shadow: 'rgba(27, 94, 59, 0.12)',
+  overlay: 'rgba(0,0,0,0.42)',
+  divider: '#EAF0EA',
 };
