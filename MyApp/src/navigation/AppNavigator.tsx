@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform } from 'react-native';
 
-import HomeScreen from '../screens/HomeScreen';
+import HomeStack from './HomeStack';
 import ExploreScreen from '../screens/ExploreScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import WalletScreen from '../screens/WalletScreen';
@@ -14,7 +14,7 @@ const Tab = createBottomTabNavigator();
 
 // Tab configuration — name, screen, and icon mapping
 const TABS = [
-  { name: 'Home',     component: HomeScreen,     icon: 'home'     },
+  { name: 'Home',     component: HomeStack,      icon: 'home'     },
   { name: 'Explore',  component: ExploreScreen,  icon: 'compass'  },
   { name: 'Bookings', component: BookingsScreen,  icon: 'calendar' },
   { name: 'Wallet',   component: WalletScreen,   icon: 'wallet'   },

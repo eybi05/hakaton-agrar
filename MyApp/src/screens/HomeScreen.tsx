@@ -56,7 +56,9 @@ const FEATURED = [
   },
 ];
 
-export default function HomeScreen() {
+type Props = { navigation: any };
+
+export default function HomeScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
 
   return (
@@ -125,7 +127,7 @@ export default function HomeScreen() {
         {/* 2-column grid of category cards */}
         <View style={styles.categoryGrid}>
           {CATEGORIES.map((cat) => (
-            <TouchableOpacity key={cat.id} style={[styles.catCard, { backgroundColor: cat.bg }]} activeOpacity={0.8}>
+            <TouchableOpacity key={cat.id} style={[styles.catCard, { backgroundColor: cat.bg }]} activeOpacity={0.8} onPress={() => navigation.navigate('Category', { category: cat.name })}>
               <View style={[styles.catIconWrap, { backgroundColor: cat.color + '22' }]}>
                 <Ionicons name={cat.icon as any} size={26} color={cat.color} />
               </View>
