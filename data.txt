@@ -1,1 +1,7 @@
-excel
+# siz nese elesez 
+git add . 
+git commit -m "yorum yap"
+git push
+
+#git acmaq istesez
+git pull         update 
