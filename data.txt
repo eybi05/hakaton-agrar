@@ -6,5 +6,5 @@ git push
 #git acmaq istesez
 git pull         update 
 
-
+https://www.youtube.com/watch?v=BMMcmmnjrM8
 https://docs.google.com/document/d/1l_gaGyzpSzJhKvTT4ps4qCf2nGtqFwHCI45wCHxj-1s/edit?usp=sharing
