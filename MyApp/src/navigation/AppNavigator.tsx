@@ -6,7 +6,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import HomeStack from './HomeStack';
 import HistoricalStack from './HistoricalStack';
 import FarmingStack from './FarmingStack';
-import MissionsScreen from '../screens/MissionsScreen';
+import MissionsStack from './MissionsStack';
 import ChatbotScreen from '../screens/ChatbotScreen';
 import { COLORS } from '../theme/colors';
 
@@ -16,7 +16,7 @@ const TABS = [
   { name: 'Home',       component: HomeStack,       icon: 'home',         label: 'Home'       },
   { name: 'Historical', component: HistoricalStack, icon: 'business',     label: 'Historical' },
   { name: 'Farming',    component: FarmingStack,    icon: 'leaf',         label: 'Farming'    },
-  { name: 'Missions',   component: MissionsScreen,  icon: 'trophy',       label: 'Missions'   },
+  { name: 'Missions',   component: MissionsStack,   icon: 'trophy',       label: 'Missions'   },
   { name: 'AgroBot',    component: ChatbotScreen,   icon: 'chatbubbles',  label: 'AgroBot'    },
 ] as const;
 

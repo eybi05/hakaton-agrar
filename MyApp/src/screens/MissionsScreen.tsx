@@ -11,60 +11,92 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
+import { useTokens } from '../context/TokenContext';
+import { useBadges } from '../context/BadgeContext';
 
 const { width } = Dimensions.get('window');
 
+// ── New user: Daşdəmir — fresh profile, nothing done yet ──────────────────────
 const DAILY_MISSIONS = [
-  { id: '1', title: 'Visit a Farm',          desc: 'Check in at any farm experience',    xp: 50,  progress: 0.8,  done: false, icon: 'leaf-outline',       color: COLORS.primary },
-  { id: '2', title: 'Leave a Review',         desc: 'Rate any experience you visited',    xp: 30,  progress: 1.0,  done: true,  icon: 'star-outline',       color: COLORS.goldLight },
-  { id: '3', title: 'Complete Your Profile',  desc: 'Add photo and bio to your profile',  xp: 20,  progress: 1.0,  done: true,  icon: 'person-outline',     color: '#5C6BC0' },
-  { id: '4', title: 'Share an Experience',    desc: 'Share a place with a friend',        xp: 25,  progress: 0.4,  done: false, icon: 'share-outline',      color: '#26A69A' },
-  { id: '5', title: 'Explore Historical',     desc: 'View 3 historical places',           xp: 40,  progress: 0.33, done: false, icon: 'business-outline',   color: COLORS.historicalLight },
+  { id: '1', title: 'Visit a Farm',         desc: 'Check in at any farm experience',   xp: 50,  progress: 0,   done: false, icon: 'leaf-outline',      color: COLORS.primary         },
+  { id: '2', title: 'Leave a Review',        desc: 'Rate any experience you visited',   xp: 30,  progress: 0,   done: false, icon: 'star-outline',      color: COLORS.goldLight       },
+  { id: '3', title: 'Complete Your Profile', desc: 'Add photo and bio to your profile', xp: 20,  progress: 0,   done: false, icon: 'person-outline',    color: '#5C6BC0'              },
+  { id: '4', title: 'Share an Experience',   desc: 'Share a place with a friend',       xp: 25,  progress: 0,   done: false, icon: 'share-outline',     color: '#26A69A'              },
+  { id: '5', title: 'Explore Historical',    desc: 'View 3 historical places',          xp: 40,  progress: 0,   done: false, icon: 'business-outline',  color: COLORS.historicalLight },
 ];
 
 const WEEKLY_CHALLENGES = [
-  { id: 'w1', title: 'Farm Explorer',        desc: 'Visit 3 different farm types',       xp: 150, progress: 0.67, icon: 'leaf',          color: COLORS.primary },
-  { id: 'w2', title: 'History Buff',         desc: 'Visit 5 historical places',          xp: 200, progress: 0.4,  icon: 'business',      color: COLORS.historical },
-  { id: 'w3', title: 'Top Reviewer',         desc: 'Write 5 detailed reviews',           xp: 100, progress: 0.6,  icon: 'star',          color: COLORS.goldLight },
+  { id: 'w1', title: 'Farm Explorer',  desc: 'Visit 3 different farm types',  xp: 150, progress: 0, icon: 'leaf',     color: COLORS.primary    },
+  { id: 'w2', title: 'History Buff',   desc: 'Visit 5 historical places',     xp: 200, progress: 0, icon: 'business', color: COLORS.historical  },
+  { id: 'w3', title: 'Top Reviewer',   desc: 'Write 5 detailed reviews',      xp: 100, progress: 0, icon: 'star',     color: COLORS.goldLight   },
 ];
 
 const BADGES = [
-  { id: 'b1',  label: 'First Farm',       icon: 'leaf',              earned: true,  color: COLORS.primary    },
-  { id: 'b2',  label: 'Reviewer',         icon: 'star',              earned: true,  color: COLORS.goldLight  },
-  { id: 'b3',  label: 'Camper',           icon: 'flame',             earned: true,  color: '#E67E22'         },
-  { id: 'b4',  label: 'Food Lover',       icon: 'restaurant',        earned: true,  color: '#C0392B'         },
-  { id: 'b5',  label: 'Explorer',         icon: 'compass',           earned: false, color: COLORS.textLight  },
-  { id: 'b6',  label: 'Historian',        icon: 'business',          earned: false, color: COLORS.textLight  },
-  { id: 'b7',  label: 'Horse Rider',      icon: 'paw',               earned: false, color: COLORS.textLight  },
-  { id: 'b8',  label: 'Nature Lover',     icon: 'partly-sunny',      earned: false, color: COLORS.textLight  },
+  { id: 'b1', label: 'First Farm',   icon: 'leaf',         earned: false, color: COLORS.textLight },
+  { id: 'b2', label: 'Reviewer',     icon: 'star',         earned: false, color: COLORS.textLight },
+  { id: 'b3', label: 'Camper',       icon: 'flame',        earned: false, color: COLORS.textLight },
+  { id: 'b4', label: 'Food Lover',   icon: 'restaurant',   earned: false, color: COLORS.textLight },
+  { id: 'b5', label: 'Explorer',     icon: 'compass',      earned: false, color: COLORS.textLight },
+  { id: 'b6', label: 'Historian',    icon: 'business',     earned: false, color: COLORS.textLight },
+  { id: 'b7', label: 'Horse Rider',  icon: 'paw',          earned: false, color: COLORS.textLight },
+  { id: 'b8', label: 'Nature Lover', icon: 'partly-sunny', earned: false, color: COLORS.textLight },
 ];
 
-const LEVEL = 7;
-const CURRENT_XP = 750;
-const NEXT_LEVEL_XP = 1000;
-const TOTAL_XP = 4750;
+// Maps mission id → activityType for badge integration
+const MISSION_ACTIVITY: Record<string, string> = {
+  '1': 'visit_farm',
+  '2': 'complete_activity',
+  '3': 'complete_activity',
+  '4': 'complete_activity',
+  '5': 'visit_region',
+};
 
-export default function MissionsScreen() {
+type Props = { navigation: any };
+
+export default function MissionsScreen({ navigation }: Props) {
   const [tab, setTab] = useState<'daily' | 'weekly'>('daily');
+  const [claimed, setClaimed] = useState<string[]>([]);
+  const { balance, lifetime, addTokens } = useTokens();
+  const { completeActivity, getUnlockedCount } = useBadges();
 
   const dailyDone = DAILY_MISSIONS.filter((m) => m.done).length;
+
+  const claimMission = (id: string, amount: number) => {
+    if (claimed.includes(id)) return;
+    addTokens(amount);
+    setClaimed((prev) => [...prev, id]);
+    // Also update badge progress
+    const activityType = MISSION_ACTIVITY[id];
+    if (activityType) completeActivity(activityType);
+  };
+
+  // Derive level from lifetime tokens (every 1000 = 1 level)
+  const level = Math.floor(lifetime / 1000) + 1;
+  const levelProgress = (lifetime % 1000) / 1000;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* ── Level hero card ──────────────────────────────────────────── */}
+        {/* ── Level / Token hero card ───────────────────────────────────── */}
         <LinearGradient colors={[COLORS.gold, '#E6A817', '#F5C518']} style={styles.levelCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <View style={[styles.ldeco, { width: 180, height: 180, top: -60, right: -50 }]} />
           <View style={[styles.ldeco, { width: 80, height: 80, bottom: -20, left: -20 }]} />
 
+          {/* Token balance — big & central */}
+          <View style={styles.tokenHero}>
+            <Text style={styles.tokenCoin}>🪙</Text>
+            <Text style={styles.tokenBalance}>{balance.toLocaleString()}</Text>
+            <Text style={styles.tokenLabel}>Tokens</Text>
+          </View>
+
           <View style={styles.levelRow}>
             <View style={styles.levelBadge}>
-              <Text style={styles.levelNum}>{LEVEL}</Text>
+              <Text style={styles.levelNum}>{level}</Text>
             </View>
             <View>
-              <Text style={styles.levelTitle}>AgroExplorer</Text>
-              <Text style={styles.levelSub}>Level {LEVEL} · {TOTAL_XP.toLocaleString()} XP total</Text>
+              <Text style={styles.levelTitle}>Daşdəmir</Text>
+              <Text style={styles.levelSub}>Level {level} · {lifetime.toLocaleString()} tokens earned</Text>
             </View>
             <View style={styles.streakBadge}>
               <Ionicons name="flame" size={14} color="#E67E22" />
@@ -74,16 +106,20 @@ export default function MissionsScreen() {
 
           <View style={styles.xpSection}>
             <View style={styles.xpBarRow}>
-              <Text style={styles.xpLabel}>Progress to Level {LEVEL + 1}</Text>
-              <Text style={styles.xpFrac}>{CURRENT_XP} / {NEXT_LEVEL_XP} XP</Text>
+              <Text style={styles.xpLabel}>Progress to Level {level + 1}</Text>
+              <Text style={styles.xpFrac}>{Math.round(levelProgress * 100)}%</Text>
             </View>
             <View style={styles.xpTrack}>
-              <View style={[styles.xpFill, { width: `${(CURRENT_XP / NEXT_LEVEL_XP) * 100}%` as any }]} />
+              <View style={[styles.xpFill, { width: `${levelProgress * 100}%` as any }]} />
             </View>
           </View>
 
           <View style={styles.statsRow}>
-            {[{ label: 'Daily Done', value: `${dailyDone}/${DAILY_MISSIONS.length}` }, { label: 'Badges', value: `${BADGES.filter(b=>b.earned).length}` }, { label: 'Total XP', value: TOTAL_XP.toLocaleString() }].map((s) => (
+            {[
+              { label: 'Balance',     value: balance.toLocaleString() },
+              { label: 'Mükafatlar', value: `${getUnlockedCount()}` },
+              { label: 'Claimed',     value: `${claimed.length}` },
+            ].map((s) => (
               <View key={s.label} style={styles.statItem}>
                 <Text style={styles.statNum}>{s.value}</Text>
                 <Text style={styles.statLabel}>{s.label}</Text>
@@ -92,41 +128,60 @@ export default function MissionsScreen() {
           </View>
         </LinearGradient>
 
-        {/* ── Mission tabs ─────────────────────────────────────────────── */}
+        {/* ── Mission tabs + Rewards button ────────────────────────────── */}
         <View style={styles.tabRow}>
           {(['daily', 'weekly'] as const).map((t) => (
             <TouchableOpacity key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabActive]}>
               <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-                {t === 'daily' ? 'Daily Missions' : 'Weekly Challenges'}
+                {t === 'daily' ? 'Gündəlik' : 'Həftəlik'}
               </Text>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            style={styles.rewardsTab}
+            onPress={() => navigation.navigate('Rewards')}
+          >
+            <Ionicons name="ribbon" size={14} color="#4A1D96" />
+            <Text style={styles.rewardsTabText}>Mükafatlar</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Mission list ─────────────────────────────────────────────── */}
         <View style={styles.missionList}>
-          {(tab === 'daily' ? DAILY_MISSIONS : WEEKLY_CHALLENGES).map((m) => (
-            <View key={m.id} style={[styles.missionCard, (m as any).done && styles.missionCardDone]}>
-              <View style={[styles.missionIcon, { backgroundColor: m.color + '18' }]}>
-                <Ionicons name={m.icon as any} size={22} color={m.done ? COLORS.textLight : m.color} />
-              </View>
-              <View style={styles.missionInfo}>
-                <View style={styles.missionTitleRow}>
-                  <Text style={[styles.missionTitle, (m as any).done && styles.missionTitleDone]}>{m.title}</Text>
-                  <View style={[styles.xpChip, { backgroundColor: m.color + '18' }]}>
-                    <Text style={[styles.xpChipText, { color: m.color }]}>+{m.xp} XP</Text>
+          {(tab === 'daily' ? DAILY_MISSIONS : WEEKLY_CHALLENGES).map((m) => {
+            const isClaimed = claimed.includes(m.id);
+            const canClaim  = m.progress >= 1.0 && !isClaimed;
+            return (
+              <View key={m.id} style={[styles.missionCard, isClaimed && styles.missionCardDone]}>
+                <View style={[styles.missionIcon, { backgroundColor: m.color + '18' }]}>
+                  <Ionicons name={m.icon as any} size={22} color={isClaimed ? COLORS.textLight : m.color} />
+                </View>
+                <View style={styles.missionInfo}>
+                  <View style={styles.missionTitleRow}>
+                    <Text style={[styles.missionTitle, isClaimed && styles.missionTitleDone]}>{m.title}</Text>
+                    <View style={[styles.xpChip, { backgroundColor: m.color + '18' }]}>
+                      <Text style={styles.tokenMini}>🪙</Text>
+                      <Text style={[styles.xpChipText, { color: m.color }]}>{m.xp}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.missionDesc}>{m.desc}</Text>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${m.progress * 100}%` as any, backgroundColor: isClaimed ? COLORS.success : m.color }]} />
+                  </View>
+                  <View style={styles.missionBottom}>
+                    <Text style={styles.progressLabel}>
+                      {isClaimed ? '✓ Claimed' : `${Math.round(m.progress * 100)}% complete`}
+                    </Text>
+                    {canClaim && (
+                      <TouchableOpacity style={styles.claimBtn} onPress={() => claimMission(m.id, m.xp)}>
+                        <Text style={styles.claimBtnText}>Claim 🪙{m.xp}</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
-                <Text style={styles.missionDesc}>{m.desc}</Text>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${m.progress * 100}%` as any, backgroundColor: m.done ? COLORS.success : m.color }]} />
-                </View>
-                <Text style={styles.progressLabel}>
-                  {m.done ? 'Completed ✓' : `${Math.round(m.progress * 100)}% complete`}
-                </Text>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* ── Achievements ─────────────────────────────────────────────── */}
@@ -161,7 +216,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
 
   // Level card
-  levelCard: { padding: 20, gap: 16, overflow: 'hidden' },
+  levelCard: { padding: 20, gap: 14, overflow: 'hidden' },
+
+  // Token hero
+  tokenHero: { alignItems: 'center', gap: 2 },
+  tokenCoin: { fontSize: 36 },
+  tokenBalance: { fontSize: 42, fontWeight: '900', color: COLORS.white, letterSpacing: -1 },
+  tokenLabel: { fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
   ldeco: { position: 'absolute', borderRadius: 200, backgroundColor: 'rgba(255,255,255,0.12)' },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   levelBadge: {
@@ -202,6 +263,13 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: COLORS.gold },
   tabText: { fontSize: 14, fontWeight: '600', color: COLORS.textLight },
   tabTextActive: { color: COLORS.textDark },
+  rewardsTab: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 14,
+    backgroundColor: '#EDE9FE',
+    borderBottomWidth: 2.5, borderBottomColor: '#4A1D96',
+  },
+  rewardsTabText: { fontSize: 13, fontWeight: '700', color: '#4A1D96' },
 
   // Missions
   missionList: { padding: 16, gap: 10 },
@@ -217,12 +285,16 @@ const styles = StyleSheet.create({
   missionTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   missionTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textDark, flex: 1 },
   missionTitleDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
-  xpChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  xpChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   xpChipText: { fontSize: 11, fontWeight: '700' },
+  tokenMini: { fontSize: 11 },
   missionDesc: { fontSize: 12, color: COLORS.textLight },
   progressTrack: { height: 5, backgroundColor: COLORS.divider, borderRadius: 3, overflow: 'hidden', marginTop: 4 },
   progressFill: { height: '100%', borderRadius: 3 },
   progressLabel: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
+  missionBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
+  claimBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
+  claimBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.white },
 
   // Section
   secRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 20, marginBottom: 12 },
