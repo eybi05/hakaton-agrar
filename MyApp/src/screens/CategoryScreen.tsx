@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
+import TokenBadge from '../components/TokenBadge';
 
 const { width } = Dimensions.get('window');
 
@@ -110,7 +111,7 @@ export default function CategoryScreen({ route, navigation }: Props) {
           </View>
           <Text style={[styles.headerTitle, { color: meta.color }]}>{category}</Text>
         </View>
-        <View style={{ width: 40 }} />
+        <TokenBadge variant="dark" />
       </View>
 
       {/* ── Listing count ────────────────────────────────────────────────────── */}

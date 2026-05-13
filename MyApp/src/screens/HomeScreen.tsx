@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { COLORS } from '../theme/colors';
+import TokenBadge from '../components/TokenBadge';
 
 const { width } = Dimensions.get('window');
 
@@ -91,10 +92,13 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.greeting}>Good morning 👋</Text>
             <Text style={styles.topTitle}>Find your farm escape</Text>
           </View>
-          <TouchableOpacity style={styles.notifBtn}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
+          <View style={styles.topRight}>
+            <TokenBadge variant="dark" />
+            <TouchableOpacity style={styles.notifBtn}>
+              <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+              <View style={styles.notifDot} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Search bar ───────────────────────────────────────────────── */}
@@ -279,6 +283,7 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 13, color: COLORS.textLight, marginBottom: 2 },
   topTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textDark, letterSpacing: -0.3 },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   notifBtn: {
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: COLORS.card, justifyContent: 'center', alignItems: 'center',

@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
+import TokenBadge from '../components/TokenBadge';
 
 const { width } = Dimensions.get('window');
 
@@ -88,12 +89,12 @@ export default function FarmingScreen({ navigation }: Props) {
             <Text style={styles.headerTitle}>Farming Places</Text>
             <Text style={styles.headerSub}>Discover farms across Azerbaijan</Text>
           </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => navigation.navigate('AddPlace')}
-          >
-            <Ionicons name="add" size={20} color={COLORS.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TokenBadge variant="light" />
+            <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddPlace')}>
+              <Ionicons name="add" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={17} color={COLORS.textLight} style={{ marginRight: 8 }} />

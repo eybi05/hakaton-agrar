@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
+import TokenBadge from '../components/TokenBadge';
 
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;
@@ -86,7 +87,10 @@ export default function HistoricalScreen({ navigation }: Props) {
       {/* ── Header ───────────────────────────────────────────────────── */}
       <LinearGradient colors={[COLORS.historical, COLORS.historicalLight]} style={styles.header}>
         <View style={[styles.hBubble, { width: 160, height: 160, top: -50, right: -40 }]} />
-        <Text style={styles.headerTitle}>Historical Places</Text>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.headerTitle}>Historical Places</Text>
+          <TokenBadge variant="light" />
+        </View>
         <Text style={styles.headerSub}>Explore Azerbaijan's rich heritage</Text>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={17} color={COLORS.textLight} style={{ marginRight: 8 }} />
@@ -162,8 +166,9 @@ const styles = StyleSheet.create({
 
   // Header
   header: { paddingTop: 14, paddingHorizontal: 20, paddingBottom: 28, overflow: 'hidden' },
+  headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   hBubble: { position: 'absolute', borderRadius: 200, backgroundColor: 'rgba(255,255,255,0.07)' },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.white, marginBottom: 4 },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.white },
   headerSub: { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginBottom: 16 },
   searchBar: {
     flexDirection: 'row', alignItems: 'center',
