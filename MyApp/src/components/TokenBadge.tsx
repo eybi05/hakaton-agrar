@@ -22,9 +22,12 @@ export default function TokenBadge({ variant = 'dark', onPress }: Props) {
       disabled={!onPress}
     >
       <Text style={styles.coin}>🪙</Text>
-      <Text style={[styles.amount, isLight ? styles.amountLight : styles.amountDark]}>
-        {balance.toLocaleString()}
-      </Text>
+      <View>
+        <Text style={[styles.label, isLight ? styles.labelLight : styles.labelDark]}>Tokens</Text>
+        <Text style={[styles.amount, isLight ? styles.amountLight : styles.amountDark]}>
+          {balance.toLocaleString()}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -33,23 +36,31 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 20,
+    gap: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
   badgeDark: {
     backgroundColor: COLORS.goldXLight,
-    borderWidth: 1,
-    borderColor: COLORS.goldLight + '60',
+    borderWidth: 1.5,
+    borderColor: COLORS.goldLight + '70',
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 3,
   },
   badgeLight: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
-  coin: { fontSize: 13 },
-  amount: { fontSize: 13, fontWeight: '700' },
+  coin: { fontSize: 22 },
+  label: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3 },
+  labelDark: { color: COLORS.gold },
+  labelLight: { color: 'rgba(255,255,255,0.72)' },
+  amount: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
   amountDark: { color: COLORS.gold },
   amountLight: { color: COLORS.white },
 });

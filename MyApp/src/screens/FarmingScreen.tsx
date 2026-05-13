@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
-import TokenBadge from '../components/TokenBadge';
+import TokenBar from '../components/TokenBar';
 
 const { width } = Dimensions.get('window');
 
@@ -89,12 +89,9 @@ export default function FarmingScreen({ navigation }: Props) {
             <Text style={styles.headerTitle}>Farming Places</Text>
             <Text style={styles.headerSub}>Discover farms across Azerbaijan</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TokenBadge variant="light" />
-            <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddPlace')}>
-              <Ionicons name="add" size={20} color={COLORS.primary} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddPlace')}>
+            <Ionicons name="add" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
         </View>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={17} color={COLORS.textLight} style={{ marginRight: 8 }} />
@@ -112,6 +109,9 @@ export default function FarmingScreen({ navigation }: Props) {
           )}
         </View>
       </LinearGradient>
+
+      {/* ── Token bar ────────────────────────────────────────────────── */}
+      <TokenBar />
 
       {/* ── Region filter ────────────────────────────────────────────── */}
       <ScrollView
@@ -230,14 +230,23 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textDark },
 
   // Region filter
-  regionBar: { maxHeight: 56, backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.divider },
-  regionScroll: { paddingHorizontal: 16, alignItems: 'center', gap: 8 },
-  regionChip: {
-    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: COLORS.cardAlt, borderWidth: 1, borderColor: COLORS.border,
+  regionBar: {
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1, borderBottomColor: COLORS.divider,
+    paddingVertical: 10,
   },
-  regionChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  regionText: { fontSize: 13, fontWeight: '600', color: COLORS.textMedium },
+  regionScroll: { paddingHorizontal: 14, alignItems: 'center', gap: 8 },
+  regionChip: {
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 22,
+    backgroundColor: COLORS.primaryXLight,
+    borderWidth: 1.5, borderColor: COLORS.primaryLight + '50',
+  },
+  regionChipActive: {
+    backgroundColor: COLORS.primary, borderColor: COLORS.primary,
+    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35, shadowRadius: 6, elevation: 4,
+  },
+  regionText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
   regionTextActive: { color: COLORS.white },
 
   // List

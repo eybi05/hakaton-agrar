@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
-import TokenBadge from '../components/TokenBadge';
+import TokenBar from '../components/TokenBar';
 
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;
@@ -87,10 +87,7 @@ export default function HistoricalScreen({ navigation }: Props) {
       {/* ── Header ───────────────────────────────────────────────────── */}
       <LinearGradient colors={[COLORS.historical, COLORS.historicalLight]} style={styles.header}>
         <View style={[styles.hBubble, { width: 160, height: 160, top: -50, right: -40 }]} />
-        <View style={styles.headerTopRow}>
-          <Text style={styles.headerTitle}>Historical Places</Text>
-          <TokenBadge variant="light" />
-        </View>
+        <Text style={styles.headerTitle}>Historical Places</Text>
         <Text style={styles.headerSub}>Explore Azerbaijan's rich heritage</Text>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={17} color={COLORS.textLight} style={{ marginRight: 8 }} />
@@ -103,6 +100,9 @@ export default function HistoricalScreen({ navigation }: Props) {
           />
         </View>
       </LinearGradient>
+
+      {/* ── Token bar ────────────────────────────────────────────────── */}
+      <TokenBar />
 
       {/* ── Filters ──────────────────────────────────────────────────── */}
       <ScrollView
@@ -178,14 +178,23 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textDark },
 
   // Filters
-  filterBar: { maxHeight: 56, backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.divider },
-  filterScroll: { paddingHorizontal: 16, alignItems: 'center', gap: 8 },
-  filterChip: {
-    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: COLORS.cardAlt, borderWidth: 1, borderColor: COLORS.border,
+  filterBar: {
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1, borderBottomColor: COLORS.divider,
+    paddingVertical: 10,
   },
-  filterChipActive: { backgroundColor: COLORS.historical, borderColor: COLORS.historical },
-  filterChipText: { fontSize: 13, fontWeight: '600', color: COLORS.textMedium },
+  filterScroll: { paddingHorizontal: 14, alignItems: 'center', gap: 8 },
+  filterChip: {
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 22,
+    backgroundColor: COLORS.historicalXLight,
+    borderWidth: 1.5, borderColor: COLORS.historicalLight + '50',
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.historical, borderColor: COLORS.historical,
+    shadowColor: COLORS.historical, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35, shadowRadius: 6, elevation: 4,
+  },
+  filterChipText: { fontSize: 14, fontWeight: '700', color: COLORS.historical },
   filterChipTextActive: { color: COLORS.white },
 
   // Grid

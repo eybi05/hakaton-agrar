@@ -12,39 +12,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import { useTokens } from '../context/TokenContext';
-import TokenBadge from '../components/TokenBadge';
 
 const { width } = Dimensions.get('window');
 
+// ── New user: Daşdəmir — fresh profile, nothing done yet ──────────────────────
 const DAILY_MISSIONS = [
-  { id: '1', title: 'Visit a Farm',          desc: 'Check in at any farm experience',    xp: 50,  progress: 0.8,  done: false, icon: 'leaf-outline',       color: COLORS.primary },
-  { id: '2', title: 'Leave a Review',         desc: 'Rate any experience you visited',    xp: 30,  progress: 1.0,  done: true,  icon: 'star-outline',       color: COLORS.goldLight },
-  { id: '3', title: 'Complete Your Profile',  desc: 'Add photo and bio to your profile',  xp: 20,  progress: 1.0,  done: true,  icon: 'person-outline',     color: '#5C6BC0' },
-  { id: '4', title: 'Share an Experience',    desc: 'Share a place with a friend',        xp: 25,  progress: 0.4,  done: false, icon: 'share-outline',      color: '#26A69A' },
-  { id: '5', title: 'Explore Historical',     desc: 'View 3 historical places',           xp: 40,  progress: 0.33, done: false, icon: 'business-outline',   color: COLORS.historicalLight },
+  { id: '1', title: 'Visit a Farm',         desc: 'Check in at any farm experience',   xp: 50,  progress: 0,   done: false, icon: 'leaf-outline',      color: COLORS.primary         },
+  { id: '2', title: 'Leave a Review',        desc: 'Rate any experience you visited',   xp: 30,  progress: 0,   done: false, icon: 'star-outline',      color: COLORS.goldLight       },
+  { id: '3', title: 'Complete Your Profile', desc: 'Add photo and bio to your profile', xp: 20,  progress: 0,   done: false, icon: 'person-outline',    color: '#5C6BC0'              },
+  { id: '4', title: 'Share an Experience',   desc: 'Share a place with a friend',       xp: 25,  progress: 0,   done: false, icon: 'share-outline',     color: '#26A69A'              },
+  { id: '5', title: 'Explore Historical',    desc: 'View 3 historical places',          xp: 40,  progress: 0,   done: false, icon: 'business-outline',  color: COLORS.historicalLight },
 ];
 
 const WEEKLY_CHALLENGES = [
-  { id: 'w1', title: 'Farm Explorer',        desc: 'Visit 3 different farm types',       xp: 150, progress: 0.67, icon: 'leaf',          color: COLORS.primary },
-  { id: 'w2', title: 'History Buff',         desc: 'Visit 5 historical places',          xp: 200, progress: 0.4,  icon: 'business',      color: COLORS.historical },
-  { id: 'w3', title: 'Top Reviewer',         desc: 'Write 5 detailed reviews',           xp: 100, progress: 0.6,  icon: 'star',          color: COLORS.goldLight },
+  { id: 'w1', title: 'Farm Explorer',  desc: 'Visit 3 different farm types',  xp: 150, progress: 0, icon: 'leaf',     color: COLORS.primary    },
+  { id: 'w2', title: 'History Buff',   desc: 'Visit 5 historical places',     xp: 200, progress: 0, icon: 'business', color: COLORS.historical  },
+  { id: 'w3', title: 'Top Reviewer',   desc: 'Write 5 detailed reviews',      xp: 100, progress: 0, icon: 'star',     color: COLORS.goldLight   },
 ];
 
 const BADGES = [
-  { id: 'b1',  label: 'First Farm',       icon: 'leaf',              earned: true,  color: COLORS.primary    },
-  { id: 'b2',  label: 'Reviewer',         icon: 'star',              earned: true,  color: COLORS.goldLight  },
-  { id: 'b3',  label: 'Camper',           icon: 'flame',             earned: true,  color: '#E67E22'         },
-  { id: 'b4',  label: 'Food Lover',       icon: 'restaurant',        earned: true,  color: '#C0392B'         },
-  { id: 'b5',  label: 'Explorer',         icon: 'compass',           earned: false, color: COLORS.textLight  },
-  { id: 'b6',  label: 'Historian',        icon: 'business',          earned: false, color: COLORS.textLight  },
-  { id: 'b7',  label: 'Horse Rider',      icon: 'paw',               earned: false, color: COLORS.textLight  },
-  { id: 'b8',  label: 'Nature Lover',     icon: 'partly-sunny',      earned: false, color: COLORS.textLight  },
+  { id: 'b1', label: 'First Farm',   icon: 'leaf',         earned: false, color: COLORS.textLight },
+  { id: 'b2', label: 'Reviewer',     icon: 'star',         earned: false, color: COLORS.textLight },
+  { id: 'b3', label: 'Camper',       icon: 'flame',        earned: false, color: COLORS.textLight },
+  { id: 'b4', label: 'Food Lover',   icon: 'restaurant',   earned: false, color: COLORS.textLight },
+  { id: 'b5', label: 'Explorer',     icon: 'compass',      earned: false, color: COLORS.textLight },
+  { id: 'b6', label: 'Historian',    icon: 'business',     earned: false, color: COLORS.textLight },
+  { id: 'b7', label: 'Horse Rider',  icon: 'paw',          earned: false, color: COLORS.textLight },
+  { id: 'b8', label: 'Nature Lover', icon: 'partly-sunny', earned: false, color: COLORS.textLight },
 ];
-
-const LEVEL = 7;
-const CURRENT_XP = 750;
-const NEXT_LEVEL_XP = 1000;
-const TOTAL_XP = 4750;
 
 export default function MissionsScreen() {
   const [tab, setTab] = useState<'daily' | 'weekly'>('daily');
@@ -84,8 +79,8 @@ export default function MissionsScreen() {
               <Text style={styles.levelNum}>{level}</Text>
             </View>
             <View>
-              <Text style={styles.levelTitle}>AgroExplorer</Text>
-              <Text style={styles.levelSub}>Level {level} · {lifetime.toLocaleString()} earned total</Text>
+              <Text style={styles.levelTitle}>Daşdəmir</Text>
+              <Text style={styles.levelSub}>Level {level} · {lifetime.toLocaleString()} tokens earned</Text>
             </View>
             <View style={styles.streakBadge}>
               <Ionicons name="flame" size={14} color="#E67E22" />

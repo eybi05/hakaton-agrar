@@ -13,7 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { COLORS } from '../theme/colors';
-import TokenBadge from '../components/TokenBadge';
+import TokenBar from '../components/TokenBar';
+
+// Azerbaijan bounding box — map cannot scroll outside this
+const AZ_BOUNDS = { minLat: 38.25, maxLat: 41.95, minLng: 44.75, maxLng: 50.75 };
+const AZ_REGION = { latitude: 40.1, longitude: 47.7, latitudeDelta: 4.2, longitudeDelta: 5.8 };
 
 const { width } = Dimensions.get('window');
 
@@ -76,6 +80,16 @@ const MARKERS = [
   { id: '6', title: 'Sheki Khan Palace',       region: 'Sheki',  lat: 41.1960, lng: 47.1750, color: '#4A1D96'       },
 ];
 
+const USER_NAME = 'Daşdəmir';
+
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h >= 5  && h < 12) return `Good morning, ${USER_NAME} ☀️`;
+  if (h >= 12 && h < 17) return `Good afternoon, ${USER_NAME} 🌤️`;
+  if (h >= 17 && h < 21) return `Good evening, ${USER_NAME} 🌇`;
+  return `Good night, ${USER_NAME} 🌙`;
+};
+
 type Props = { navigation: any };
 
 export default function HomeScreen({ navigation }: Props) {
@@ -89,17 +103,17 @@ export default function HomeScreen({ navigation }: Props) {
         {/* ── Top bar ──────────────────────────────────────────────────── */}
         <View style={styles.topBar}>
           <View>
-            <Text style={styles.greeting}>Good morning 👋</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.topTitle}>Find your farm escape</Text>
           </View>
-          <View style={styles.topRight}>
-            <TokenBadge variant="dark" />
-            <TouchableOpacity style={styles.notifBtn}>
-              <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
-              <View style={styles.notifDot} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.notifBtn}>
+            <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
         </View>
+
+        {/* ── Token bar ────────────────────────────────────────────────── */}
+        <TokenBar />
 
         {/* ── Search bar ───────────────────────────────────────────────── */}
         <View style={styles.searchBar}>
@@ -228,8 +242,8 @@ export default function HomeScreen({ navigation }: Props) {
         {/* ── Map ──────────────────────────────────────────────────────── */}
         <View style={styles.secRow}>
           <Text style={styles.secTitle}>Explore on Map</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>Full map</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('FullMap')}>
+            <Text style={styles.seeAll}>Full map ↗</Text>
           </TouchableOpacity>
         </View>
 
@@ -237,16 +251,13 @@ export default function HomeScreen({ navigation }: Props) {
           <MapView
             style={styles.map}
             provider={PROVIDER_DEFAULT}
-            initialRegion={{
-              latitude: 40.9,
-              longitude: 47.7,
-              latitudeDelta: 2.8,
-              longitudeDelta: 2.8,
-            }}
-            scrollEnabled
-            zoomEnabled
+            initialRegion={AZ_REGION}
+            scrollEnabled={false}
+            zoomEnabled={false}
             showsUserLocation
             showsMyLocationButton={false}
+            minZoomLevel={6}
+            maxZoomLevel={14}
           >
             {MARKERS.map((m) => (
               <Marker
@@ -283,7 +294,6 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 13, color: COLORS.textLight, marginBottom: 2 },
   topTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textDark, letterSpacing: -0.3 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   notifBtn: {
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: COLORS.card, justifyContent: 'center', alignItems: 'center',

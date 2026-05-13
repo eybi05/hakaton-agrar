@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
-import TokenBadge from '../components/TokenBadge';
+import TokenBar from '../components/TokenBar';
 
 const { width } = Dimensions.get('window');
 
@@ -145,7 +145,6 @@ export default function ChatbotScreen() {
               <Text style={styles.onlineText}>Azerbaijan Tourism AI</Text>
             </View>
           </View>
-          <TokenBadge variant="light" />
           <TouchableOpacity
             onPress={() => {
               setMessages([{
@@ -162,6 +161,9 @@ export default function ChatbotScreen() {
           </TouchableOpacity>
         </View>
       </LinearGradient>
+
+      {/* ── Token bar ────────────────────────────────────────────────────── */}
+      <TokenBar />
 
       {/* ── Suggested prompts ───────────────────────────────────────────── */}
       <ScrollView

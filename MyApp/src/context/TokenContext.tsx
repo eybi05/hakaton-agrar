@@ -17,8 +17,8 @@ const TokenContext = createContext<TokenContextType>({
 export const useTokens = () => useContext(TokenContext);
 
 export function TokenProvider({ children }: { children: ReactNode }) {
-  const [balance, setBalance] = useState(1250);
-  const [lifetime, setLifetime] = useState(4750);
+  const [balance, setBalance] = useState(0);
+  const [lifetime, setLifetime] = useState(0);
 
   const addTokens = (amount: number) => {
     setBalance((b) => b + amount);

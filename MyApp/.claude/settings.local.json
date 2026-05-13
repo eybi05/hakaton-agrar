@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(Copy-Item *)",
-      "Bash(node gen-icon.js)"
+      "Bash(node gen-icon.js)",
+      "Bash(npx expo *)"
     ]
   }
 }
