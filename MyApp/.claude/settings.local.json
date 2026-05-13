@@ -3,7 +3,8 @@
     "allow": [
       "PowerShell(Copy-Item *)",
       "Bash(node gen-icon.js)",
-      "Bash(npx expo *)"
+      "Bash(npx expo *)",
+      "Bash(node convert-icon.js)"
     ]
   }
 }
