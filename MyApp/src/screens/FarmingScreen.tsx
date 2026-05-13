@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import TokenBar from '../components/TokenBar';
+import LangToggle from '../components/LangToggle';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -69,6 +71,7 @@ export default function FarmingScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
   const [region, setRegion] = useState('All');
   const [favorites, setFavorites] = useState<string[]>([]);
+  const { t } = useLanguage();
 
   const farms = FARMS.filter((f) => {
     const matchRegion = region === 'All' || f.region === region;
@@ -86,12 +89,15 @@ export default function FarmingScreen({ navigation }: Props) {
         <View style={[styles.hBubble, { width: 160, height: 160, top: -50, right: -40 }]} />
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.headerTitle}>Farming Places</Text>
-            <Text style={styles.headerSub}>Discover farms across Azerbaijan</Text>
+            <Text style={styles.headerTitle}>{t.farming.title}</Text>
+            <Text style={styles.headerSub}>{t.farming.subtitle}</Text>
           </View>
-          <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddPlace')}>
-            <Ionicons name="add" size={20} color={COLORS.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <LangToggle variant="light" />
+            <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddPlace')}>
+              <Ionicons name="add" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={17} color={COLORS.textLight} style={{ marginRight: 8 }} />
@@ -134,7 +140,7 @@ export default function FarmingScreen({ navigation }: Props) {
 
       {/* ── Farm list ────────────────────────────────────────────────── */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-        <Text style={styles.countLabel}>{farms.length} farms found</Text>
+        <Text style={styles.countLabel}>{farms.length} {t.farming.found}</Text>
 
         {farms.map((farm) => (
           <TouchableOpacity key={farm.id} style={styles.farmCard} activeOpacity={0.88}>
@@ -192,10 +198,10 @@ export default function FarmingScreen({ navigation }: Props) {
               <View style={styles.cardActions}>
                 <TouchableOpacity style={styles.routeBtn}>
                   <Ionicons name="navigate-outline" size={14} color={COLORS.primary} />
-                  <Text style={styles.routeBtnText}>Get Route</Text>
+                  <Text style={styles.routeBtnText}>{t.farming.getRoute}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.bookBtn}>
-                  <Text style={styles.bookBtnText}>Book Visit</Text>
+                  <Text style={styles.bookBtnText}>{t.farming.bookVisit}</Text>
                 </TouchableOpacity>
               </View>
             </View>

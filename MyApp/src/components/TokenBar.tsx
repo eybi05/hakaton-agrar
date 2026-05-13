@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTokens } from '../context/TokenContext';
+import { useLanguage } from '../context/LanguageContext';
 import { COLORS } from '../theme/colors';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 
 export default function TokenBar({ onPress }: Props) {
   const { balance, lifetime } = useTokens();
+  const { t } = useLanguage();
   const navigation = useNavigation<any>();
 
   const level    = Math.floor(lifetime / 1000) + 1;
@@ -35,7 +37,7 @@ export default function TokenBar({ onPress }: Props) {
           <Text style={styles.coin}>🪙</Text>
           <View>
             <Text style={styles.balance}>{balance.toLocaleString()}</Text>
-            <Text style={styles.label}>GEORG Tokens</Text>
+            <Text style={styles.label}>{t.tokenBar.label}</Text>
           </View>
         </View>
 
@@ -53,7 +55,7 @@ export default function TokenBar({ onPress }: Props) {
         {/* +Earn → goes to Missions */}
         <TouchableOpacity style={styles.earnBtn} activeOpacity={0.8} onPress={goToMissions}>
           <Ionicons name="add" size={13} color={COLORS.gold} />
-          <Text style={styles.earnText}>Earn</Text>
+          <Text style={styles.earnText}>{t.tokenBar.earn}</Text>
         </TouchableOpacity>
       </LinearGradient>
     </TouchableOpacity>

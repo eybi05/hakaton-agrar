@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import { useTokens } from '../context/TokenContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useBadges } from '../context/BadgeContext';
 
 const { width } = Dimensions.get('window');
@@ -58,6 +59,7 @@ export default function MissionsScreen({ navigation }: Props) {
   const [claimed, setClaimed] = useState<string[]>([]);
   const { balance, lifetime, addTokens } = useTokens();
   const { completeActivity, getUnlockedCount } = useBadges();
+  const { t } = useLanguage();
 
   const dailyDone = DAILY_MISSIONS.filter((m) => m.done).length;
 
@@ -96,7 +98,7 @@ export default function MissionsScreen({ navigation }: Props) {
             </View>
             <View>
               <Text style={styles.levelTitle}>Daşdəmir</Text>
-              <Text style={styles.levelSub}>Level {level} · {lifetime.toLocaleString()} tokens earned</Text>
+              <Text style={styles.levelSub}>{t.common.level} {level} · {lifetime.toLocaleString()} {t.missions.total}</Text>
             </View>
             <View style={styles.streakBadge}>
               <Ionicons name="flame" size={14} color="#E67E22" />
@@ -130,10 +132,11 @@ export default function MissionsScreen({ navigation }: Props) {
 
         {/* ── Mission tabs + Rewards button ────────────────────────────── */}
         <View style={styles.tabRow}>
-          {(['daily', 'weekly'] as const).map((t) => (
-            <TouchableOpacity key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabActive]}>
-              <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-                {t === 'daily' ? 'Gündəlik' : 'Həftəlik'}
+          {(['daily', 'weekly'] as const).map((tabKey) => (
+            <TouchableOpacity key={tabKey} onPress={() => setTab(tabKey)} style={[styles.tab, tab === tabKey && styles.tabActive]}>
+              <Text style={[styles.tabText, tab === tabKey && styles.tabTextActive]}>
+                {tabKey === 'daily' ? t.missions.daily : t.missions.weekly}
+
               </Text>
             </TouchableOpacity>
           ))}

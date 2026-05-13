@@ -9,15 +9,16 @@ import FarmingStack from './FarmingStack';
 import MissionsStack from './MissionsStack';
 import ChatbotScreen from '../screens/ChatbotScreen';
 import { COLORS } from '../theme/colors';
+import { useLanguage } from '../context/LanguageContext';
 
 const Tab = createBottomTabNavigator();
 
 const TABS = [
-  { name: 'Home',       component: HomeStack,       icon: 'home',         label: 'Home'       },
-  { name: 'Historical', component: HistoricalStack, icon: 'business',     label: 'Historical' },
-  { name: 'Farming',    component: FarmingStack,    icon: 'leaf',         label: 'Farming'    },
-  { name: 'Missions',   component: MissionsStack,   icon: 'trophy',       label: 'Missions'   },
-  { name: 'AgroBot',    component: ChatbotScreen,   icon: 'chatbubbles',  label: 'AgroBot'    },
+  { name: 'Home',       component: HomeStack,       icon: 'home',        navKey: 'home'       },
+  { name: 'Historical', component: HistoricalStack, icon: 'business',    navKey: 'historical' },
+  { name: 'Farming',    component: FarmingStack,    icon: 'leaf',        navKey: 'farming'    },
+  { name: 'Missions',   component: MissionsStack,   icon: 'trophy',      navKey: 'missions'   },
+  { name: 'AgroBot',    component: ChatbotScreen,   icon: 'chatbubbles', navKey: 'chatbot'    },
 ] as const;
 
 const ACTIVE_COLORS: Record<string, string> = {
@@ -29,6 +30,8 @@ const ACTIVE_COLORS: Record<string, string> = {
 };
 
 export default function AppNavigator() {
+  const { t } = useLanguage();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -58,7 +61,7 @@ export default function AppNavigator() {
           key={tab.name}
           name={tab.name}
           component={tab.component}
-          options={{ tabBarLabel: tab.label }}
+          options={{ tabBarLabel: t.nav[tab.navKey] }}
         />
       ))}
     </Tab.Navigator>

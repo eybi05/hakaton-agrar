@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import TokenBar from '../components/TokenBar';
+import LangToggle from '../components/LangToggle';
+import { useLanguage } from '../context/LanguageContext';
 import { getHistoricalPhotos, hasRealPhoto } from '../data/historicalImages';
 
 const { width } = Dimensions.get('window');
@@ -256,6 +258,7 @@ type Props = { navigation: any };
 export default function HistoricalScreen({ navigation }: Props) {
   const [activeFilter, setActiveFilter] = useState('All');
   const [search, setSearch]             = useState('');
+  const { t }                           = useLanguage();
 
   const filtered = PLACES.filter((p) => {
     const matchFilter = activeFilter === 'All' || p.tag === activeFilter;
@@ -270,13 +273,16 @@ export default function HistoricalScreen({ navigation }: Props) {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <LinearGradient colors={[COLORS.historical, COLORS.historicalLight]} style={styles.header}>
         <View style={[styles.hBubble, { width: 160, height: 160, top: -50, right: -40 }]} />
-        <Text style={styles.headerTitle}>Tarixi Yerlər</Text>
-        <Text style={styles.headerSub}>Azərbaycanın zəngin irsini kəşf edin</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>{t.historical.title}</Text>
+          <LangToggle variant="light" />
+        </View>
+        <Text style={styles.headerSub}>{t.historical.subtitle}</Text>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={17} color={COLORS.textLight} style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Yer, şəhər axtar…"
+            placeholder={t.historical.searchHint}
             placeholderTextColor={COLORS.textLight}
             value={search}
             onChangeText={setSearch}
@@ -314,7 +320,7 @@ export default function HistoricalScreen({ navigation }: Props) {
 
       {/* ── Grid ────────────────────────────────────────────────────────── */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid} keyboardShouldPersistTaps="handled">
-        <Text style={styles.resultCount}>{filtered.length} yer tapıldı</Text>
+        <Text style={styles.resultCount}>{filtered.length} {t.historical.found}</Text>
         <View style={styles.gridRow}>
           {filtered.map((place) => (
             <TouchableOpacity

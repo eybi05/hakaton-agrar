@@ -11,6 +11,8 @@ import { COLORS } from '../theme/colors';
 import TokenBar from '../components/TokenBar';
 import { useBadges } from '../context/BadgeContext';
 import { useTokens } from '../context/TokenContext';
+import { useLanguage } from '../context/LanguageContext';
+import LangToggle from '../components/LangToggle';
 import { MARKETPLACE_ITEMS, MarketplaceItem, MARKETPLACE_CATEGORIES } from '../data/marketplaceData';
 
 const { width } = Dimensions.get('window');
@@ -68,12 +70,14 @@ const MARKERS = [
 
 const USER_NAME = 'Daşdəmir';
 
-const getGreeting = () => {
+const getGreeting = (t: any) => {
   const h = new Date().getHours();
-  if (h >= 5  && h < 12) return `Sabahınız xeyir, ${USER_NAME} ☀️`;
-  if (h >= 12 && h < 17) return `Günortanız xeyir, ${USER_NAME} 🌤️`;
-  if (h >= 17 && h < 21) return `Axşamınız xeyir, ${USER_NAME} 🌇`;
-  return `Gecəniz xeyir, ${USER_NAME} 🌙`;
+  const emoji = h >= 5 && h < 12 ? '☀️' : h < 17 ? '🌤️' : h < 21 ? '🌇' : '🌙';
+  const label = h >= 5 && h < 12 ? t.home.greetingMorning
+              : h >= 12 && h < 17 ? t.home.greetingAfternoon
+              : h >= 17 && h < 21 ? t.home.greetingEvening
+              : t.home.greetingNight;
+  return `${label}, ${USER_NAME} ${emoji}`;
 };
 
 type Props = { navigation: any };
@@ -89,6 +93,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   const { notifications, clearNotifications } = useBadges();
   const { balance, spendTokens }              = useTokens();
+  const { t }                                 = useLanguage();
 
   // ── Search: filter across categories AND marketplace ───────────────────────
   const q = search.trim().toLowerCase();
@@ -145,9 +150,10 @@ export default function HomeScreen({ navigation }: Props) {
         {/* ── Top bar ────────────────────────────────────────────────────── */}
         <View style={styles.topBar}>
           <View>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.topTitle}>Ferma macəranı tap</Text>
+            <Text style={styles.greeting}>{getGreeting(t)}</Text>
+            <Text style={styles.topTitle}>{t.home.subtitle}</Text>
           </View>
+          <LangToggle variant="dark" />
           <TouchableOpacity style={styles.notifBtn} onPress={clearNotifications}>
             <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
             {notifications > 0 ? (
@@ -168,7 +174,7 @@ export default function HomeScreen({ navigation }: Props) {
           <Ionicons name="search-outline" size={18} color={COLORS.textLight} style={{ marginRight: 10 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Ferma, tur, restoran axtar…"
+            placeholder={t.home.searchPlaceholder}
             placeholderTextColor={COLORS.textLight}
             value={search}
             onChangeText={setSearch}
@@ -188,7 +194,7 @@ export default function HomeScreen({ navigation }: Props) {
         {isSearching && (
           <View style={styles.searchResults}>
             <Text style={styles.searchResultsTitle}>
-              «{search}» üzrə nəticələr
+              {t.home.searchResults} «{search}»
             </Text>
 
             {!hasAnyResult && (
@@ -202,7 +208,7 @@ export default function HomeScreen({ navigation }: Props) {
             {/* Matching categories */}
             {matchedCategories.length > 0 && (
               <>
-                <Text style={styles.searchGroupLabel}>Kateqoriyalar</Text>
+                <Text style={styles.searchGroupLabel}>{t.home.categories}</Text>
                 {matchedCategories.map((cat) => (
                   <TouchableOpacity
                     key={cat.id}
@@ -254,8 +260,8 @@ export default function HomeScreen({ navigation }: Props) {
             {/* ── Token Benefits intro ─────────────────────────────────── */}
             <View style={styles.secRow}>
               <View>
-                <Text style={styles.secTitle}>Token Üstünlükləri</Text>
-                <Text style={styles.secSubtitle}>Tokenləri endirimlərə çevirin</Text>
+                <Text style={styles.secTitle}>{t.home.tokenBenefits}</Text>
+                <Text style={styles.secSubtitle}>{t.home.tokenSubtitle}</Text>
               </View>
               <Text style={styles.balancePill}>🪙 {balance.toLocaleString()}</Text>
             </View>
@@ -264,7 +270,7 @@ export default function HomeScreen({ navigation }: Props) {
             <LinearGradient colors={[COLORS.primaryDark, '#1A4A2E']} style={styles.benefitsBanner}>
               <View style={styles.benefitsBannerDeco} />
               <Text style={styles.benefitsBannerTitle}>
-                {isSubscribed ? `✅ Abunəlik Aktivdir · ${activePlan}` : '🔒 Abunəlik ilə aktiv edin'}
+                {isSubscribed ? `✅ ${t.home.subActive} · ${activePlan}` : `🔒 ${t.home.subRequired}`}
               </Text>
               <Text style={styles.benefitsBannerSub}>
                 {isSubscribed
@@ -282,7 +288,7 @@ export default function HomeScreen({ navigation }: Props) {
               </View>
               {!isSubscribed && (
                 <TouchableOpacity style={styles.subscribeNowBtn} onPress={() => setShowSubModal(true)}>
-                  <Text style={styles.subscribeNowText}>Abunə ol →</Text>
+                  <Text style={styles.subscribeNowText}>{t.home.subscribeNow}</Text>
                 </TouchableOpacity>
               )}
             </LinearGradient>
@@ -334,8 +340,8 @@ export default function HomeScreen({ navigation }: Props) {
                       activeOpacity={0.85}
                     >
                       {isSubscribed
-                        ? <Text style={styles.marketBuyText}>🪙 {item.tokenCost} ilə al</Text>
-                        : <Text style={styles.marketBuyText}>🔒 Abunəlik tələb olunur</Text>
+                        ? <Text style={styles.marketBuyText}>🪙 {item.tokenCost} {t.market.buyWith}</Text>
+                        : <Text style={styles.marketBuyText}>🔒 {t.market.lockLabel}</Text>
                       }
                     </TouchableOpacity>
                   </LinearGradient>
@@ -351,8 +357,8 @@ export default function HomeScreen({ navigation }: Props) {
             {/* ── Subscription plans ────────────────────────────────────── */}
             <View style={styles.secRow}>
               <View>
-                <Text style={styles.secTitle}>Abunəlik</Text>
-                <Text style={styles.secSubtitle}>Endirimlərə giriş əldə edin</Text>
+                <Text style={styles.secTitle}>{t.home.subscription}</Text>
+                <Text style={styles.secSubtitle}>{t.home.subSubtitle}</Text>
               </View>
               {isSubscribed && (
                 <View style={styles.activeBadge}>
@@ -404,7 +410,7 @@ export default function HomeScreen({ navigation }: Props) {
                         onPress={() => subscribeToPlan(plan.id)}
                       >
                         <Text style={[styles.planBtnText, { color: isPurchased ? COLORS.white : plan.btnColor }]}>
-                          {isPurchased ? '✓ Aktivdir' : 'Abunə ol'}
+                          {isPurchased ? `✓ ${t.plans.active}` : t.plans.subscribeBtn}
                         </Text>
                       </TouchableOpacity>
                     </LinearGradient>
@@ -416,8 +422,8 @@ export default function HomeScreen({ navigation }: Props) {
 
             {/* ── Browse Categories ──────────────────────────────────────── */}
             <View style={styles.secRow}>
-              <Text style={styles.secTitle}>Kateqoriyalar</Text>
-              <TouchableOpacity><Text style={styles.seeAll}>Hamısına bax</Text></TouchableOpacity>
+              <Text style={styles.secTitle}>{t.home.browseCategories}</Text>
+              <TouchableOpacity><Text style={styles.seeAll}>{t.common.seeAll}</Text></TouchableOpacity>
             </View>
 
             <View style={styles.catGrid}>
@@ -476,7 +482,7 @@ export default function HomeScreen({ navigation }: Props) {
         <Pressable style={styles.modalOverlay} onPress={() => setShowSubModal(false)}>
           <Pressable style={styles.modalSheet} onPress={() => {}}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Abunəlik Seçin</Text>
+            <Text style={styles.modalTitle}>{t.market.subModal}</Text>
             {pendingItem && (
               <View style={styles.modalItemBanner}>
                 <Text style={styles.modalItemText}>

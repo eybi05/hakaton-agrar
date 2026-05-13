@@ -16,11 +16,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import TokenBar from '../components/TokenBar';
+import LangToggle from '../components/LangToggle';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
-// ── Pollinations.ai — free, no API key required ───────────────────────────────
-const AI_URL = 'https://text.pollinations.ai/';
+// ── DeepSeek API ─────────────────────────────────────────────────────────────
+// 1. Get your key at: https://platform.deepseek.com/api_keys
+// 2. Paste it below and run:  npx expo start --clear
+const DEEPSEEK_API_KEY = 'sk-f06422fcc0e24efba93af049879f25b7';
+
+const DEEPSEEK_URL   = 'https://api.deepseek.com/chat/completions';
+const DEEPSEEK_MODEL = 'deepseek-v4-flash';   // fastest — change to 'deepseek-v4-pro' for higher quality
 
 const SYSTEM_PROMPT = `You are AgroBot, a friendly and knowledgeable agro-tourism assistant for Azerbaijan.
 You help visitors discover farms, historical places, village tours, horse riding, camping, organic food experiences, local hotels, traditional foods, and nature activities across Azerbaijan.
@@ -30,7 +37,7 @@ Keep answers concise, warm, and practical. Use bullet points for lists. Include 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Message = { id: string; text: string; from: 'user' | 'bot'; time: string };
 
-// OpenAI-compatible message format used by Pollinations
+// OpenAI-compatible message format (DeepSeek uses the same schema)
 type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -49,10 +56,12 @@ const SUGGESTED = [
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function ChatbotScreen() {
+  const { t } = useLanguage();
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
-      text: "Hi! I'm AgroBot 🌿\n\nYour personal Azerbaijan agro-tourism assistant. Ask me about farms, historical places, activities, food, and more!",
+      text: t.chatbot.welcome,
       from: 'bot',
       time: getTime(),
     },
@@ -65,27 +74,39 @@ export default function ChatbotScreen() {
 
   const scrollToBottom = () => scrollRef.current?.scrollToEnd({ animated: true });
 
-  // ── Call Pollinations.ai (free, no key) ────────────────────────────────────
+  // ── Call DeepSeek API (OpenAI-compatible) ─────────────────────────────────
   const callAI = async (userText: string, currentHistory: ChatTurn[]): Promise<string> => {
-    const res = await fetch(AI_URL, {
+    if (DEEPSEEK_API_KEY === 'YOUR_DEEPSEEK_API_KEY_HERE') {
+      throw new Error('API key not set. Open ChatbotScreen.tsx and replace YOUR_DEEPSEEK_API_KEY_HERE with your DeepSeek key from https://platform.deepseek.com/api_keys');
+    }
+
+    const res = await fetch(DEEPSEEK_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+      },
       body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system',    content: SYSTEM_PROMPT },
           ...currentHistory,
-          { role: 'user', content: userText },
+          { role: 'user',      content: userText },
         ],
-        model: 'openai-fast',
-        seed: Math.floor(Math.random() * 9999),
+        max_tokens: 600,
+        temperature: 0.7,
       }),
     });
 
-    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any)?.error?.message ?? `HTTP ${res.status}`);
+    }
 
-    const text = await res.text();
-    if (!text.trim()) throw new Error('Empty response');
-    return text.trim();
+    const data = await res.json();
+    const reply: string = data?.choices?.[0]?.message?.content ?? '';
+    if (!reply.trim()) throw new Error('Empty response from DeepSeek');
+    return reply.trim();
   };
 
   // ── Send message ────────────────────────────────────────────────────────────
@@ -139,10 +160,10 @@ export default function ChatbotScreen() {
             <Ionicons name="leaf" size={20} color={COLORS.white} />
           </LinearGradient>
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>AgroBot</Text>
+            <Text style={styles.headerTitle}>{t.chatbot.title}</Text>
             <View style={styles.onlineRow}>
               <View style={styles.onlineDot} />
-              <Text style={styles.onlineText}>Azerbaijan Tourism AI</Text>
+              <Text style={styles.onlineText}>{t.chatbot.subtitle}</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -163,7 +184,10 @@ export default function ChatbotScreen() {
       </LinearGradient>
 
       {/* ── Token bar ────────────────────────────────────────────────────── */}
-      <TokenBar />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 6, backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.divider }}>
+        <View style={{ flex: 1 }}><TokenBar /></View>
+        <LangToggle variant="dark" />
+      </View>
 
       {/* ── Suggested prompts ───────────────────────────────────────────── */}
       <ScrollView
@@ -236,7 +260,7 @@ export default function ChatbotScreen() {
         <View style={styles.inputBar}>
           <TextInput
             style={styles.input}
-            placeholder="Ask about farms, places, activities…"
+            placeholder={t.chatbot.placeholder}
             placeholderTextColor={COLORS.textLight}
             value={input}
             onChangeText={setInput}

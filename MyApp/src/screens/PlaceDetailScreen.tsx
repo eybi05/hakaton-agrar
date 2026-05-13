@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { COLORS } from '../theme/colors';
+import { useLanguage } from '../context/LanguageContext';
 import type { HistoricalPlace } from './HistoricalScreen';
 import { getHistoricalPhotos } from '../data/historicalImages';
 import { getAudio, hasAudio } from '../data/historicalAudio';
@@ -27,6 +28,7 @@ type Props = {
 
 export default function PlaceDetailScreen({ route, navigation }: Props) {
   const { place } = route.params;
+  const { t }     = useLanguage();
   const photos    = getHistoricalPhotos(place.id);
   const audioSrc  = getAudio(place.id);
 
@@ -150,8 +152,8 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
                     />
                   </TouchableOpacity>
                   <View style={styles.audioInfo}>
-                    <Text style={styles.audioTitle}>🎧 Səs Bələdçisi</Text>
-                    <Text style={styles.audioSub}>Audio Guide · Az / EN</Text>
+                    <Text style={styles.audioTitle}>{t.placeDetail.audioGuide}</Text>
+                    <Text style={styles.audioSub}>{t.placeDetail.audioSubtitle}</Text>
                   </View>
                 </View>
                 <Text style={styles.audioTime}>
@@ -183,7 +185,7 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
           )}
 
           {/* ── Photo carousel ───────────────────────────────────────────── */}
-          <Text style={styles.secTitle}>📷 Şəkillər</Text>
+          <Text style={styles.secTitle}>📷 {t.placeDetail.photos}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -195,13 +197,13 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
           </ScrollView>
 
           {/* ── Full description ─────────────────────────────────────────── */}
-          <Text style={styles.secTitle}>ℹ️ Haqqında</Text>
+          <Text style={styles.secTitle}>ℹ️ {t.placeDetail.about}</Text>
           <Text style={styles.descText}>{place.fullDesc ?? place.desc}</Text>
 
           {/* ── Bullet points ────────────────────────────────────────────── */}
           {place.bullets && place.bullets.length > 0 && (
             <>
-              <Text style={styles.secTitle}>📌 Əsas Faktlar</Text>
+              <Text style={styles.secTitle}>📌 {t.placeDetail.keyFacts}</Text>
               <View style={styles.bulletList}>
                 {place.bullets.map((b, i) => (
                   <View key={i} style={styles.bulletRow}>
@@ -221,7 +223,7 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
           )}
 
           {/* ── Visitor info ─────────────────────────────────────────────── */}
-          <Text style={styles.secTitle}>🕐 Ziyarətçi Məlumatı</Text>
+          <Text style={styles.secTitle}>🕐 {t.placeDetail.visitorInfo}</Text>
           <View style={styles.infoGrid}>
             {(place.info ?? DEFAULT_INFO).map((item) => (
               <View key={item.label} style={styles.infoCard}>
@@ -235,13 +237,17 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
           </View>
 
           {/* ── Nearby ───────────────────────────────────────────────────── */}
-          <Text style={styles.secTitle}>🧭 Yaxın Təcrübələr</Text>
-          {NEARBY.map((n) => (
-            <TouchableOpacity key={n.label} style={styles.nearbyRow} activeOpacity={0.8}>
+          <Text style={styles.secTitle}>🧭 {t.placeDetail.nearby}</Text>
+          {([
+            { key: 'nearby1', icon: 'restaurant-outline' },
+            { key: 'nearby2', icon: 'hammer-outline'     },
+            { key: 'nearby3', icon: 'walk-outline'       },
+          ] as const).map(({ key, icon }) => (
+            <TouchableOpacity key={key} style={styles.nearbyRow} activeOpacity={0.8}>
               <View style={[styles.nearbyIcon, { backgroundColor: COLORS.primaryXLight }]}>
-                <Ionicons name={n.icon as any} size={18} color={COLORS.primary} />
+                <Ionicons name={icon} size={18} color={COLORS.primary} />
               </View>
-              <Text style={styles.nearbyLabel}>{n.label}</Text>
+              <Text style={styles.nearbyLabel}>{t.placeDetail[key]}</Text>
               <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
             </TouchableOpacity>
           ))}
@@ -265,7 +271,7 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
             end={{ x: 1, y: 0 }}
           >
             <Ionicons name="navigate" size={16} color={COLORS.white} />
-            <Text style={styles.planBtnText}>Ziyarəti Planla</Text>
+            <Text style={styles.planBtnText}>{t.placeDetail.planVisit}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -281,11 +287,7 @@ const DEFAULT_INFO = [
   { label: 'Best Season',   value: 'Apr – Oct',      icon: 'sunny-outline'     },
 ];
 
-const NEARBY = [
-  { label: 'Yerli Mətbəx Turu',        icon: 'restaurant-outline' },
-  { label: 'Ənənəvi Sənətkarlıq',      icon: 'hammer-outline'     },
-  { label: 'Rehbərli Tarixi Gəzinti',  icon: 'walk-outline'       },
-];
+// Nearby items are translated inline via t.placeDetail in the JSX
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({

@@ -5,18 +5,21 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import { TokenProvider } from './src/context/TokenContext';
 import { BadgeProvider } from './src/context/BadgeContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 
 export default function App() {
   return (
-    <TokenProvider>
-      <BadgeProvider>
+    <LanguageProvider>
+      <TokenProvider>
+        <BadgeProvider>
         <SafeAreaProvider>
           <NavigationContainer>
             <StatusBar style="dark" backgroundColor="transparent" translucent />
             <AppNavigator />
           </NavigationContainer>
         </SafeAreaProvider>
-      </BadgeProvider>
-    </TokenProvider>
+        </BadgeProvider>
+      </TokenProvider>
+    </LanguageProvider>
   );
 }
