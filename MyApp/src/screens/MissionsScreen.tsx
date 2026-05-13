@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import { useTokens } from '../context/TokenContext';
+import { useBadges } from '../context/BadgeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -41,10 +42,22 @@ const BADGES = [
   { id: 'b8', label: 'Nature Lover', icon: 'partly-sunny', earned: false, color: COLORS.textLight },
 ];
 
-export default function MissionsScreen() {
+// Maps mission id → activityType for badge integration
+const MISSION_ACTIVITY: Record<string, string> = {
+  '1': 'visit_farm',
+  '2': 'complete_activity',
+  '3': 'complete_activity',
+  '4': 'complete_activity',
+  '5': 'visit_region',
+};
+
+type Props = { navigation: any };
+
+export default function MissionsScreen({ navigation }: Props) {
   const [tab, setTab] = useState<'daily' | 'weekly'>('daily');
   const [claimed, setClaimed] = useState<string[]>([]);
   const { balance, lifetime, addTokens } = useTokens();
+  const { completeActivity, getUnlockedCount } = useBadges();
 
   const dailyDone = DAILY_MISSIONS.filter((m) => m.done).length;
 
@@ -52,6 +65,9 @@ export default function MissionsScreen() {
     if (claimed.includes(id)) return;
     addTokens(amount);
     setClaimed((prev) => [...prev, id]);
+    // Also update badge progress
+    const activityType = MISSION_ACTIVITY[id];
+    if (activityType) completeActivity(activityType);
   };
 
   // Derive level from lifetime tokens (every 1000 = 1 level)
@@ -100,9 +116,9 @@ export default function MissionsScreen() {
 
           <View style={styles.statsRow}>
             {[
-              { label: 'Balance',    value: balance.toLocaleString() },
-              { label: 'Badges',     value: `${BADGES.filter(b => b.earned).length}` },
-              { label: 'Claimed',    value: `${claimed.length}` },
+              { label: 'Balance',     value: balance.toLocaleString() },
+              { label: 'Mükafatlar', value: `${getUnlockedCount()}` },
+              { label: 'Claimed',     value: `${claimed.length}` },
             ].map((s) => (
               <View key={s.label} style={styles.statItem}>
                 <Text style={styles.statNum}>{s.value}</Text>
@@ -112,15 +128,22 @@ export default function MissionsScreen() {
           </View>
         </LinearGradient>
 
-        {/* ── Mission tabs ─────────────────────────────────────────────── */}
+        {/* ── Mission tabs + Rewards button ────────────────────────────── */}
         <View style={styles.tabRow}>
           {(['daily', 'weekly'] as const).map((t) => (
             <TouchableOpacity key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabActive]}>
               <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-                {t === 'daily' ? 'Daily Missions' : 'Weekly Challenges'}
+                {t === 'daily' ? 'Gündəlik' : 'Həftəlik'}
               </Text>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            style={styles.rewardsTab}
+            onPress={() => navigation.navigate('Rewards')}
+          >
+            <Ionicons name="ribbon" size={14} color="#4A1D96" />
+            <Text style={styles.rewardsTabText}>Mükafatlar</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Mission list ─────────────────────────────────────────────── */}
@@ -240,6 +263,13 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: COLORS.gold },
   tabText: { fontSize: 14, fontWeight: '600', color: COLORS.textLight },
   tabTextActive: { color: COLORS.textDark },
+  rewardsTab: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 14,
+    backgroundColor: '#EDE9FE',
+    borderBottomWidth: 2.5, borderBottomColor: '#4A1D96',
+  },
+  rewardsTabText: { fontSize: 13, fontWeight: '700', color: '#4A1D96' },
 
   // Missions
   missionList: { padding: 16, gap: 10 },

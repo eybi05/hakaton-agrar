@@ -14,6 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { COLORS } from '../theme/colors';
 import TokenBar from '../components/TokenBar';
+import { useBadges } from '../context/BadgeContext';
+import { useTokens } from '../context/TokenContext';
+import { MARKETPLACE_ITEMS, MarketplaceItem } from '../data/marketplaceData';
 
 // Azerbaijan bounding box — map cannot scroll outside this
 const AZ_BOUNDS = { minLat: 38.25, maxLat: 41.95, minLng: 44.75, maxLng: 50.75 };
@@ -93,8 +96,30 @@ const getGreeting = () => {
 type Props = { navigation: any };
 
 export default function HomeScreen({ navigation }: Props) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch]           = useState('');
   const [selectedPlan, setSelectedPlan] = useState('2');
+  const [marketCat, setMarketCat]     = useState('Hamısı');
+  const { notifications, clearNotifications } = useBadges();
+  const { balance, spendTokens }      = useTokens();
+
+  // ── Live search filtering ──────────────────────────────────────────────────
+  const searchLower = search.toLowerCase();
+  const filteredCategories = CATEGORIES.filter(
+    (c) => !search || c.label.toLowerCase().includes(searchLower),
+  );
+  const filteredMarket = MARKETPLACE_ITEMS.filter(
+    (m) =>
+      (!search || m.azName.toLowerCase().includes(searchLower) || m.name.toLowerCase().includes(searchLower)) &&
+      (marketCat === 'Hamısı' || m.category === marketCat),
+  );
+
+  const handleBuy = (item: MarketplaceItem) => {
+    if (spendTokens(item.tokenCost)) {
+      alert(`✅ ${item.azName} — ${item.discount} endirimi aktiv edildi!`);
+    } else {
+      alert(`❌ Kifayət qədər token yoxdur. Lazımi: ${item.tokenCost}`);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -106,9 +131,15 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.topTitle}>Find your farm escape</Text>
           </View>
-          <TouchableOpacity style={styles.notifBtn}>
+          <TouchableOpacity style={styles.notifBtn} onPress={clearNotifications}>
             <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
-            <View style={styles.notifDot} />
+            {notifications > 0 ? (
+              <View style={styles.notifCount}>
+                <Text style={styles.notifCountText}>{notifications > 9 ? '9+' : notifications}</Text>
+              </View>
+            ) : (
+              <View style={styles.notifDot} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -134,6 +165,48 @@ export default function HomeScreen({ navigation }: Props) {
             <Ionicons name="options-outline" size={17} color={COLORS.white} />
           </TouchableOpacity>
         </View>
+
+        {/* ── Token Marketplace ────────────────────────────────────────── */}
+        <View style={styles.secRow}>
+          <Text style={styles.secTitle}>Token ilə Al</Text>
+          <Text style={styles.balancePill}>🪙 {balance.toLocaleString()}</Text>
+        </View>
+
+        {/* Category filter for marketplace */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.marketCatScroll}>
+          {['Hamısı', 'Transport', 'Restaurant', 'Farm Hotel', 'Special Tour'].map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => setMarketCat(cat)}
+              style={[styles.marketCatChip, marketCat === cat && styles.marketCatChipActive]}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.marketCatText, marketCat === cat && styles.marketCatTextActive]}>{cat}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.marketScroll}>
+          {filteredMarket.map((item) => (
+            <View key={item.id} style={styles.marketCard}>
+              <LinearGradient colors={item.gradient} style={styles.marketGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <View style={styles.marketDeco} />
+                <Text style={styles.marketEmoji}>{item.emoji}</Text>
+                <Text style={styles.marketDiscount}>{item.discount} OFF</Text>
+                <Text style={styles.marketName}>{item.azName}</Text>
+                <Text style={styles.marketDesc} numberOfLines={2}>{item.description}</Text>
+                <TouchableOpacity style={styles.marketBuyBtn} onPress={() => handleBuy(item)} activeOpacity={0.85}>
+                  <Text style={styles.marketBuyText}>🪙 {item.tokenCost}</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          ))}
+          {filteredMarket.length === 0 && (
+            <View style={styles.marketEmpty}>
+              <Text style={styles.marketEmptyText}>Nəticə tapılmadı</Text>
+            </View>
+          )}
+        </ScrollView>
 
         {/* ── Buy Subscription ─────────────────────────────────────────── */}
         <View style={styles.secRow}>
@@ -224,7 +297,7 @@ export default function HomeScreen({ navigation }: Props) {
 
         {/* Centered grid — justifyContent:'center' on each row */}
         <View style={styles.catGrid}>
-          {CATEGORIES.map((cat) => (
+          {filteredCategories.map((cat) => (
             <TouchableOpacity
               key={cat.id}
               style={styles.catCard}
@@ -305,6 +378,15 @@ const styles = StyleSheet.create({
     width: 8, height: 8, borderRadius: 4,
     backgroundColor: COLORS.error, borderWidth: 1.5, borderColor: COLORS.card,
   },
+  notifCount: {
+    position: 'absolute', top: 5, right: 5,
+    minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: COLORS.error,
+    justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5, borderColor: COLORS.card,
+  },
+  notifCountText: { fontSize: 10, fontWeight: '800', color: COLORS.white },
 
   // Search bar
   searchBar: {
@@ -321,6 +403,40 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center',
     marginLeft: 6,
   },
+
+  // Marketplace
+  balancePill: { fontSize: 13, fontWeight: '700', color: COLORS.gold },
+  marketCatScroll: { paddingHorizontal: 16, gap: 8, marginBottom: 8 },
+  marketCatChip: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18,
+    backgroundColor: COLORS.cardAlt, borderWidth: 1.5, borderColor: COLORS.border,
+  },
+  marketCatChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  marketCatText: { fontSize: 12, fontWeight: '700', color: COLORS.textMedium },
+  marketCatTextActive: { color: COLORS.white },
+  marketScroll: { paddingHorizontal: 16, gap: 12, paddingBottom: 4 },
+  marketCard: {
+    width: width * 0.54, borderRadius: 18,
+    shadowColor: 'rgba(0,0,0,0.2)', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1, shadowRadius: 10, elevation: 5,
+  },
+  marketGrad: { borderRadius: 18, padding: 16, gap: 6, overflow: 'hidden', minHeight: 180 },
+  marketDeco: {
+    position: 'absolute', top: -30, right: -30,
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.09)',
+  },
+  marketEmoji: { fontSize: 28 },
+  marketDiscount: { fontSize: 22, fontWeight: '900', color: COLORS.white, letterSpacing: -0.5 },
+  marketName: { fontSize: 14, fontWeight: '700', color: COLORS.white },
+  marketDesc: { fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 15 },
+  marketBuyBtn: {
+    marginTop: 6, backgroundColor: COLORS.white,
+    borderRadius: 12, paddingVertical: 9, alignItems: 'center',
+  },
+  marketBuyText: { fontSize: 13, fontWeight: '800', color: COLORS.textDark },
+  marketEmpty: { padding: 32, alignItems: 'center' },
+  marketEmptyText: { fontSize: 14, color: COLORS.textLight },
 
   // Section header
   secRow: {
