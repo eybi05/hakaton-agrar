@@ -9,7 +9,9 @@
       "Bash(touch __TRACKED_VAR__.gitkeep)",
       "WebFetch(domain:en.wikipedia.org)",
       "Bash(node download-images.js)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(mv \"1_maiden_tower_en.mpeg\" \"1_maiden_tower_en.mp3\")",
+      "Bash(mv \"1_maiden_tower_ru.mpeg\" \"1_maiden_tower_ru.mp3\")"
     ]
   }
 }

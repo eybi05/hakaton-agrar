@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, Dimensions, Image,
@@ -6,19 +6,28 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { COLORS } from '../theme/colors';
 import { useLanguage } from '../context/LanguageContext';
 import type { HistoricalPlace } from './HistoricalScreen';
 import { getHistoricalPhotos } from '../data/historicalImages';
-import { getAudio, hasAudio } from '../data/historicalAudio';
+import {
+  getAudioForLang,
+  hasAnyAudio,
+  getAvailableLangs,
+  type AudioLang,
+} from '../data/historicalAudio';
 
 const { width } = Dimensions.get('window');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const fmtTime = (ms: number) => {
-  const s = Math.floor(ms / 1000);
+const fmtTime = (secs: number) => {
+  const s = Math.max(0, Math.floor(secs));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+
+const LANG_META: Record<AudioLang, { flag: string; label: string }> = {
+  en: { flag: '🇬🇧', label: 'English' },
+  ru: { flag: '🇷🇺', label: 'Русский' },
 };
 
 type Props = {
@@ -27,97 +36,88 @@ type Props = {
 };
 
 export default function PlaceDetailScreen({ route, navigation }: Props) {
-  const { place } = route.params;
-  const { t }     = useLanguage();
-  const photos    = getHistoricalPhotos(place.id);
-  const audioSrc  = getAudio(place.id);
+  const { place }  = route.params;
+  const { t }      = useLanguage();
+  const photos     = getHistoricalPhotos(place.id);
+  const availLangs = getAvailableLangs(place.id);
+  const showPlayer = hasAnyAudio(place.id);
 
-  // ── Audio state ────────────────────────────────────────────────────────────
-  const [sound,      setSound]      = useState<Audio.Sound | null>(null);
-  const [playing,    setPlaying]    = useState(false);
-  const [positionMs, setPositionMs] = useState(0);
-  const [durationMs, setDurationMs] = useState(0);
-  const [loading,    setLoading]    = useState(false);
+  // Active language — default to first available (EN if present)
+  const [activeLang, setActiveLang] = useState<AudioLang>(
+    availLangs[0] ?? 'en',
+  );
 
-  // Cleanup on unmount
+  // expo-audio player — initialised with the EN source for this place
+  const initialSrc = getAudioForLang(place.id, activeLang);
+  const player     = useAudioPlayer(initialSrc ?? null);
+
+  // Detect natural playback end
+  const wasPlaying = useRef(false);
+  const [ended, setEnded] = useState(false);
+
   useEffect(() => {
-    return () => { sound?.unloadAsync(); };
-  }, [sound]);
+    if (wasPlaying.current && !player.playing) setEnded(true);
+    if (player.playing) { wasPlaying.current = true; setEnded(false); }
+  }, [player.playing]);
 
-  const loadAndPlay = useCallback(async () => {
-    if (!audioSrc) return;
-    try {
-      setLoading(true);
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+  // Reset on place change
+  useEffect(() => {
+    player.pause();
+    wasPlaying.current = false;
+    setEnded(false);
+    const langs = getAvailableLangs(place.id);
+    setActiveLang(langs[0] ?? 'en');
+  }, [place.id]);
 
-      if (sound) {
-        // Already loaded — toggle play/pause
-        const status = await sound.getStatusAsync();
-        if (status.isLoaded) {
-          if (status.isPlaying) {
-            await sound.pauseAsync();
-            setPlaying(false);
-          } else {
-            if (status.positionMillis >= status.durationMillis!) {
-              await sound.setPositionAsync(0);
-            }
-            await sound.playAsync();
-            setPlaying(true);
-          }
-        }
-      } else {
-        // First load
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          audioSrc,
-          { shouldPlay: true },
-          (status) => {
-            if (status.isLoaded) {
-              setPositionMs(status.positionMillis);
-              setDurationMs(status.durationMillis ?? 0);
-              setPlaying(status.isPlaying);
-              if (status.didJustFinish) {
-                setPlaying(false);
-                setPositionMs(0);
-              }
-            }
-          },
-        );
-        setSound(newSound);
-        setPlaying(true);
+  // ── Language switch ──────────────────────────────────────────────────────
+  const switchLang = (lang: AudioLang) => {
+    if (lang === activeLang) return;
+    const src = getAudioForLang(place.id, lang);
+    if (!src) return;
+    player.pause();
+    player.replace(src);
+    setActiveLang(lang);
+    wasPlaying.current = false;
+    setEnded(false);
+  };
+
+  // ── Play / Pause ─────────────────────────────────────────────────────────
+  const handlePlayPause = () => {
+    if (player.playing) {
+      player.pause();
+    } else {
+      // Replay from start if track ended
+      if (ended || (player.duration > 0 && player.currentTime >= player.duration)) {
+        player.seekTo(0);
+        setEnded(false);
       }
-    } catch (e) {
-      console.warn('Audio error:', e);
-    } finally {
-      setLoading(false);
+      player.play();
     }
-  }, [sound, audioSrc]);
+  };
 
-  const seek = useCallback(async (ratio: number) => {
-    if (!sound || durationMs === 0) return;
-    await sound.setPositionAsync(Math.floor(ratio * durationMs));
-  }, [sound, durationMs]);
+  const progress = player.duration > 0 ? player.currentTime / player.duration : 0;
 
-  const progress = durationMs > 0 ? positionMs / durationMs : 0;
+  // ── Seek ─────────────────────────────────────────────────────────────────
+  const seek = (tapX: number, barWidth: number) => {
+    if (player.duration === 0 || barWidth === 0) return;
+    const ratio = Math.min(1, Math.max(0, tapX / barWidth));
+    player.seekTo(ratio * player.duration);
+  };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
 
-        {/* ── Hero gradient ──────────────────────────────────────────────── */}
+        {/* ── Hero ─────────────────────────────────────────────────────────── */}
         <LinearGradient colors={place.gradient} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <View style={styles.deco1} />
           <View style={styles.deco2} />
-
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={20} color={COLORS.white} />
           </TouchableOpacity>
-
           <View style={styles.heroMeta}>
             <View style={styles.heroTopRow}>
-              <View style={styles.tagChip}>
-                <Text style={styles.tagText}>{place.tag}</Text>
-              </View>
+              <View style={styles.tagChip}><Text style={styles.tagText}>{place.tag}</Text></View>
               <View style={styles.ratingChip}>
                 <Ionicons name="star" size={12} color="#FFD700" />
                 <Text style={styles.ratingText}>{place.rating}</Text>
@@ -134,85 +134,118 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
 
         <View style={styles.body}>
 
-          {/* ── Audio Player ─────────────────────────────────────────────── */}
-          {hasAudio(place.id) ? (
+          {/* ── Audio Guide (only shown when audio files are registered) ───── */}
+          {showPlayer && (
             <View style={styles.audioCard}>
-              <LinearGradient colors={place.gradient} style={styles.audioGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                <View style={styles.audioLeft}>
-                  <TouchableOpacity
-                    style={styles.playBtn}
-                    onPress={loadAndPlay}
-                    disabled={loading}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons
-                      name={loading ? 'hourglass-outline' : playing ? 'pause' : 'play'}
-                      size={22}
-                      color={COLORS.white}
-                    />
-                  </TouchableOpacity>
-                  <View style={styles.audioInfo}>
-                    <Text style={styles.audioTitle}>{t.placeDetail.audioGuide}</Text>
-                    <Text style={styles.audioSub}>{t.placeDetail.audioSubtitle}</Text>
-                  </View>
+              {/* Header */}
+              <View style={styles.audioHeader}>
+                <LinearGradient colors={place.gradient} style={styles.audioIcon} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                  <Ionicons name="headset" size={18} color={COLORS.white} />
+                </LinearGradient>
+                <View>
+                  <Text style={styles.audioTitle}>Audio Guide</Text>
+                  <Text style={styles.audioSub}>Choose your language</Text>
                 </View>
-                <Text style={styles.audioTime}>
-                  {fmtTime(positionMs)}{durationMs > 0 ? ` / ${fmtTime(durationMs)}` : ''}
-                </Text>
-              </LinearGradient>
-
-              {/* Progress bar — tap to seek */}
-              <TouchableOpacity
-                activeOpacity={1}
-                style={styles.progressBar}
-                onPress={(e) => seek(e.nativeEvent.locationX / (width - 32))}
-              >
-                <View style={[styles.progressFill, { width: `${progress * 100}%` as any }]} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            /* ── Coming Soon placeholder ──────────────────────────────────── */
-            <View style={styles.audioComingSoon}>
-              <Ionicons name="mic-outline" size={22} color={COLORS.textLight} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.audioComingSoonTitle}>Səs Bələdçisi</Text>
-                <Text style={styles.audioComingSoonSub}>Audio guide — tezliklə əlavə ediləcək</Text>
               </View>
-              <View style={styles.soonBadge}>
-                <Text style={styles.soonBadgeText}>Tezliklə</Text>
+
+              {/* Language selector — only shows buttons for available langs */}
+              <View style={styles.langRow}>
+                {availLangs.map((lang) => {
+                  const active = lang === activeLang;
+                  const meta   = LANG_META[lang];
+                  return (
+                    <TouchableOpacity
+                      key={lang}
+                      onPress={() => switchLang(lang)}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.langBtn,
+                        active && { backgroundColor: place.gradient[0], borderColor: place.gradient[0] },
+                      ]}
+                    >
+                      <Text style={styles.langFlag}>{meta.flag}</Text>
+                      <Text style={[styles.langLabel, active && styles.langLabelActive]}>
+                        {meta.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Player row: play/pause · progress bar · time */}
+              <View style={styles.playerRow}>
+                <TouchableOpacity
+                  onPress={handlePlayPause}
+                  style={[styles.playBtn, { backgroundColor: place.gradient[0] }]}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons
+                    name={player.playing ? 'pause' : ended ? 'refresh' : 'play'}
+                    size={20}
+                    color={COLORS.white}
+                  />
+                </TouchableOpacity>
+
+                {/* Progress bar */}
+                <TouchableOpacity
+                  style={styles.progressWrap}
+                  activeOpacity={1}
+                  onPress={(e) => seek(e.nativeEvent.locationX, e.nativeEvent.target as unknown as number)}
+                >
+                  <View
+                    style={styles.progressTrack}
+                    onLayout={() => {}}
+                    // measure the actual rendered width for accurate seek
+                    onTouchEnd={(e) => seek(e.nativeEvent.locationX, width - 32 - 56 - 52)}
+                  >
+                    <View
+                      style={[
+                        styles.progressFill,
+                        { width: `${progress * 100}%` as any, backgroundColor: place.gradient[0] },
+                      ]}
+                    />
+                    {/* Thumb */}
+                    {progress > 0 && (
+                      <View
+                        style={[
+                          styles.progressThumb,
+                          { left: `${progress * 100}%` as any, backgroundColor: place.gradient[0] },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+
+                {/* Time */}
+                <Text style={styles.timeText}>
+                  {player.duration > 0
+                    ? `${fmtTime(player.currentTime)} / ${fmtTime(player.duration)}`
+                    : fmtTime(player.currentTime)}
+                </Text>
               </View>
             </View>
           )}
 
-          {/* ── Photo carousel ───────────────────────────────────────────── */}
+          {/* ── Photos ───────────────────────────────────────────────────── */}
           <Text style={styles.secTitle}>📷 {t.placeDetail.photos}</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.photoScroll}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoScroll}>
             {photos.map((src, i) => (
               <Image key={i} source={src} style={styles.photo} resizeMode="cover" />
             ))}
           </ScrollView>
 
-          {/* ── Full description ─────────────────────────────────────────── */}
+          {/* ── Description ──────────────────────────────────────────────── */}
           <Text style={styles.secTitle}>ℹ️ {t.placeDetail.about}</Text>
           <Text style={styles.descText}>{place.fullDesc ?? place.desc}</Text>
 
-          {/* ── Bullet points ────────────────────────────────────────────── */}
-          {place.bullets && place.bullets.length > 0 && (
+          {/* ── Key facts ────────────────────────────────────────────────── */}
+          {place.bullets?.length > 0 && (
             <>
               <Text style={styles.secTitle}>📌 {t.placeDetail.keyFacts}</Text>
               <View style={styles.bulletList}>
                 {place.bullets.map((b, i) => (
                   <View key={i} style={styles.bulletRow}>
-                    <LinearGradient
-                      colors={place.gradient}
-                      style={styles.bulletDot}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
+                    <LinearGradient colors={place.gradient} style={styles.bulletDot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                       <Text style={styles.bulletNum}>{i + 1}</Text>
                     </LinearGradient>
                     <Text style={styles.bulletText}>{b}</Text>
@@ -257,19 +290,14 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
       {/* ── Bottom CTA ────────────────────────────────────────────────────── */}
       <View style={styles.bottomBar}>
         <View>
-          <Text style={styles.bottomLabel}>Giriş haqqı</Text>
+          <Text style={styles.bottomLabel}>{t.placeDetail.entryFee}</Text>
           <Text style={styles.bottomFee}>
             {place.info?.find(i => i.label === 'Entry Fee')?.value ?? '₼5'}
-            <Text style={styles.bottomFeeSub}> /nəfər</Text>
+            <Text style={styles.bottomFeeSub}> {t.placeDetail.perPerson}</Text>
           </Text>
         </View>
         <TouchableOpacity style={styles.planBtn} activeOpacity={0.88}>
-          <LinearGradient
-            colors={place.gradient}
-            style={styles.planBtnGrad}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
+          <LinearGradient colors={place.gradient} style={styles.planBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
             <Ionicons name="navigate" size={16} color={COLORS.white} />
             <Text style={styles.planBtnText}>{t.placeDetail.planVisit}</Text>
           </LinearGradient>
@@ -279,17 +307,13 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
   );
 }
 
-// ── Static data ───────────────────────────────────────────────────────────────
 const DEFAULT_INFO = [
-  { label: 'Visitor Hours', value: '09:00 – 18:00', icon: 'time-outline'      },
-  { label: 'Entry Fee',     value: '₼5 / person',   icon: 'wallet-outline'    },
-  { label: 'Language',      value: 'Azerbaijani, EN', icon: 'language-outline' },
-  { label: 'Best Season',   value: 'Apr – Oct',      icon: 'sunny-outline'     },
+  { label: 'Visitor Hours', value: '09:00 – 18:00', icon: 'time-outline'     },
+  { label: 'Entry Fee',     value: '₼5 / person',   icon: 'wallet-outline'   },
+  { label: 'Language',      value: 'English, AZ',   icon: 'language-outline' },
+  { label: 'Best Season',   value: 'Apr – Oct',      icon: 'sunny-outline'    },
 ];
 
-// Nearby items are translated inline via t.placeDetail in the JSX
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
 
@@ -309,77 +333,83 @@ const styles = StyleSheet.create({
   heroLoc: { fontSize: 13, color: 'rgba(255,255,255,0.82)' },
   heroEra: { fontSize: 12, color: 'rgba(255,255,255,0.62)', fontWeight: '500' },
 
-  // Body
   body: { padding: 16 },
   secTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textDark, marginTop: 22, marginBottom: 10 },
 
-  // Audio player
+  // ── Audio card ──────────────────────────────────────────────────────────
   audioCard: {
-    borderRadius: 16, overflow: 'hidden',
-    shadowColor: 'rgba(0,0,0,0.15)', shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1, shadowRadius: 8, elevation: 4,
-    marginTop: 16,
+    backgroundColor: COLORS.card, borderRadius: 18, padding: 16,
+    shadowColor: 'rgba(0,0,0,0.10)', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1, shadowRadius: 10, elevation: 4,
+    marginTop: 16, gap: 14,
   },
-  audioGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 },
-  audioLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  audioHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  audioIcon:   { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  audioTitle:  { fontSize: 15, fontWeight: '800', color: COLORS.textDark },
+  audioSub:    { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
+
+  // Language buttons
+  langRow: { flexDirection: 'row', gap: 10 },
+  langBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 9, borderRadius: 22,
+    backgroundColor: COLORS.cardAlt, borderWidth: 1.5, borderColor: COLORS.border,
+  },
+  langFlag:        { fontSize: 18 },
+  langLabel:       { fontSize: 13, fontWeight: '700', color: COLORS.textMedium },
+  langLabelActive: { color: COLORS.white },
+
+  // Player
+  playerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   playBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
   },
-  audioInfo: { gap: 2 },
-  audioTitle: { fontSize: 14, fontWeight: '700', color: COLORS.white },
-  audioSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
-  audioTime: { fontSize: 13, fontWeight: '700', color: COLORS.white },
-  progressBar: {
-    height: 5, backgroundColor: 'rgba(0,0,0,0.15)',
+  progressWrap:  { flex: 1, justifyContent: 'center', paddingVertical: 10 },
+  progressTrack: {
+    height: 5, borderRadius: 3,
+    backgroundColor: COLORS.divider,
+    overflow: 'visible',
+    position: 'relative',
   },
-  progressFill: { height: '100%', backgroundColor: COLORS.white },
-
-  // Audio coming soon
-  audioComingSoon: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginTop: 16,
-    borderWidth: 1.5, borderColor: COLORS.divider, borderStyle: 'dashed',
+  progressFill: { height: '100%', borderRadius: 3 },
+  progressThumb: {
+    position: 'absolute', top: -4,
+    width: 13, height: 13, borderRadius: 7,
+    marginLeft: -6,
   },
-  audioComingSoonTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
-  audioComingSoonSub: { fontSize: 11, color: COLORS.textLight, marginTop: 1 },
-  soonBadge: { backgroundColor: COLORS.historicalXLight, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  soonBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.historical },
+  timeText: { fontSize: 11, fontWeight: '600', color: COLORS.textLight, minWidth: 52, textAlign: 'right' },
 
   // Photos
   photoScroll: { gap: 10, paddingBottom: 4 },
   photo: { width: 220, height: 145, borderRadius: 14 },
-
-  // Description
   descText: { fontSize: 14, color: COLORS.textMedium, lineHeight: 23 },
 
-  // Bullet points
+  // Bullets
   bulletList: { gap: 10 },
-  bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  bulletDot: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginTop: 1, flexShrink: 0 },
-  bulletNum: { fontSize: 11, fontWeight: '800', color: COLORS.white },
+  bulletRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  bulletDot:  { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginTop: 1, flexShrink: 0 },
+  bulletNum:  { fontSize: 11, fontWeight: '800', color: COLORS.white },
   bulletText: { flex: 1, fontSize: 14, color: COLORS.textMedium, lineHeight: 21 },
 
   // Info grid
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  infoCard: { width: (width - 48) / 2, backgroundColor: COLORS.card, borderRadius: 14, padding: 14, gap: 6, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 6, elevation: 2 },
-  infoIconWrap: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  infoValue: { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
-  infoLabel: { fontSize: 11, color: COLORS.textLight },
+  infoGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  infoCard:    { width: (width - 48) / 2, backgroundColor: COLORS.card, borderRadius: 14, padding: 14, gap: 6, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 6, elevation: 2 },
+  infoIconWrap:{ width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  infoValue:   { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
+  infoLabel:   { fontSize: 11, color: COLORS.textLight },
 
   // Nearby
-  nearbyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: 12, padding: 14, marginBottom: 8, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 1, shadowRadius: 4, elevation: 1 },
-  nearbyIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  nearbyRow:   { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: 12, padding: 14, marginBottom: 8, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 1, shadowRadius: 4, elevation: 1 },
+  nearbyIcon:  { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   nearbyLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: COLORS.textDark },
 
   // Bottom bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.card, paddingHorizontal: 20, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.divider, shadowColor: 'rgba(0,0,0,0.1)', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 1, shadowRadius: 8, elevation: 10 },
-  bottomLabel: { fontSize: 12, color: COLORS.textLight },
-  bottomFee: { fontSize: 22, fontWeight: '800', color: COLORS.textDark },
+  bottomBar:    { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.card, paddingHorizontal: 20, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.divider, shadowColor: 'rgba(0,0,0,0.1)', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 1, shadowRadius: 8, elevation: 10 },
+  bottomLabel:  { fontSize: 12, color: COLORS.textLight },
+  bottomFee:    { fontSize: 22, fontWeight: '800', color: COLORS.textDark },
   bottomFeeSub: { fontSize: 13, fontWeight: '400', color: COLORS.textLight },
-  planBtn: { borderRadius: 14, overflow: 'hidden' },
-  planBtnGrad: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 14 },
-  planBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.white },
+  planBtn:      { borderRadius: 14, overflow: 'hidden' },
+  planBtnGrad:  { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 14 },
+  planBtnText:  { fontSize: 15, fontWeight: '700', color: COLORS.white },
 });

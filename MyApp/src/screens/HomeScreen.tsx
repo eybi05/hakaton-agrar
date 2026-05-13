@@ -12,30 +12,41 @@ import TokenBar from '../components/TokenBar';
 import { useBadges } from '../context/BadgeContext';
 import { useTokens } from '../context/TokenContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useUser } from '../context/UserContext';
 import LangToggle from '../components/LangToggle';
-import { MARKETPLACE_ITEMS, MarketplaceItem, MARKETPLACE_CATEGORIES } from '../data/marketplaceData';
+import { MARKETPLACE_ITEMS, MarketplaceItem } from '../data/marketplaceData';
+import CameraAnalyzer from '../components/CameraAnalyzer';
 
 const { width } = Dimensions.get('window');
 
 const AZ_REGION = { latitude: 40.1, longitude: 47.7, latitudeDelta: 4.2, longitudeDelta: 5.8 };
 
 // ── Subscription plans ─────────────────────────────────────────────────────────
-const PLANS = [
+const TOURIST_PLANS = [
   {
-    id: '1', duration: '1 Gün', price: '$5', perDay: '$5 / gün', badge: null,
-    cardHeight: 210, features: ['Tam giriş', 'Bütün kateqoriyalar'],
+    id: '1', duration: '1 Day', price: '$3', perDay: '$3 / day', badge: null,
+    cardHeight: 210, features: ['Full access', 'All categories'],
     gradient: ['#2C2C4E', '#4A4A78'] as [string, string], btnColor: '#2C2C4E',
   },
   {
-    id: '2', duration: '10 Gün', price: '$39', perDay: '$3.9 / gün', badge: 'Ən Populyar',
-    cardHeight: 270, features: ['Tam giriş', 'Bütün kateqoriyalar', 'Oflayn rejim', 'Xəritə görünüşü'],
+    id: '2', duration: '10 Days', price: '$25', perDay: '$2.5 / day', badge: 'Most Popular',
+    cardHeight: 270, features: ['Full access', 'All categories', 'Offline mode', 'Map view'],
     gradient: [COLORS.primaryDark, COLORS.primaryLight] as [string, string], btnColor: COLORS.primaryDark,
   },
   {
-    id: '3', duration: '30 Gün', price: '$199', perDay: '$6.6 / gün', badge: 'Ən Sərfəli',
+    id: '3', duration: '30 Days', price: '$45', perDay: '$1.5 / day', badge: 'Best Value',
     cardHeight: 320,
-    features: ['Tam giriş', 'Bütün kateqoriyalar', 'Oflayn rejim', 'Xəritə görünüşü', 'Prioritet dəstək', 'Eksklüziv endirimlər'],
+    features: ['Full access', 'All categories', 'Offline mode', 'Map view', 'Priority support', 'Exclusive discounts'],
     gradient: ['#7B4A00', '#E8A020'] as [string, string], btnColor: '#7B4A00',
+  },
+];
+
+const FARMER_PLANS = [
+  {
+    id: '1', duration: '30 Days', price: '$15', perDay: '$0.50 / day', badge: 'Farmer Special',
+    cardHeight: 300,
+    features: ['List your farm', 'Reach tourists', 'Booking management', 'Analytics dashboard', 'Priority placement'],
+    gradient: [COLORS.primaryDark, COLORS.primaryLight] as [string, string], btnColor: COLORS.primaryDark,
   },
 ];
 
@@ -68,16 +79,14 @@ const MARKERS = [
   { id: '6', title: 'Sheki Khan Palace',   region: 'Sheki',   lat: 41.1960, lng: 47.1750, color: '#4A1D96'             },
 ];
 
-const USER_NAME = 'Daşdəmir';
-
-const getGreeting = (t: any) => {
+const getGreeting = (t: any, name: string) => {
   const h = new Date().getHours();
   const emoji = h >= 5 && h < 12 ? '☀️' : h < 17 ? '🌤️' : h < 21 ? '🌇' : '🌙';
   const label = h >= 5 && h < 12 ? t.home.greetingMorning
               : h >= 12 && h < 17 ? t.home.greetingAfternoon
               : h >= 17 && h < 21 ? t.home.greetingEvening
               : t.home.greetingNight;
-  return `${label}, ${USER_NAME} ${emoji}`;
+  return `${label}, ${name} ${emoji}`;
 };
 
 type Props = { navigation: any };
@@ -85,15 +94,17 @@ type Props = { navigation: any };
 export default function HomeScreen({ navigation }: Props) {
   const [search, setSearch]             = useState('');
   const [selectedPlan, setSelectedPlan] = useState('2');
-  const [marketCat, setMarketCat]       = useState('Hamısı');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [activePlan, setActivePlan]     = useState<string | null>(null);
   const [showSubModal, setShowSubModal] = useState(false);
   const [pendingItem, setPendingItem]   = useState<MarketplaceItem | null>(null);
 
-  const { notifications, clearNotifications } = useBadges();
-  const { balance, spendTokens }              = useTokens();
-  const { t }                                 = useLanguage();
+  const { notifications }          = useBadges();
+  const { balance, spendTokens }   = useTokens();
+  const { t }                      = useLanguage();
+  const { username, role }         = useUser();
+
+  const PLANS = role === 'farmer' ? FARMER_PLANS : TOURIST_PLANS;
 
   // ── Search: filter across categories AND marketplace ───────────────────────
   const q = search.trim().toLowerCase();
@@ -104,9 +115,7 @@ export default function HomeScreen({ navigation }: Props) {
     : CATEGORIES;
 
   const matchedMarket = MARKETPLACE_ITEMS.filter(
-    (m) =>
-      (!isSearching || m.azName.toLowerCase().includes(q) || m.name.toLowerCase().includes(q) || m.category.toLowerCase().includes(q)) &&
-      (marketCat === 'Hamısı' || m.category === marketCat),
+    (m) => !isSearching || m.azName.toLowerCase().includes(q) || m.name.toLowerCase().includes(q) || m.category.toLowerCase().includes(q),
   );
 
   const hasAnyResult = matchedCategories.length > 0 || matchedMarket.length > 0;
@@ -150,11 +159,13 @@ export default function HomeScreen({ navigation }: Props) {
         {/* ── Top bar ────────────────────────────────────────────────────── */}
         <View style={styles.topBar}>
           <View>
-            <Text style={styles.greeting}>{getGreeting(t)}</Text>
-            <Text style={styles.topTitle}>{t.home.subtitle}</Text>
+            <Text style={styles.greeting}>{getGreeting(t, username || 'Traveller')}</Text>
+            <Text style={styles.topTitle}>
+              {username ? username : 'Welcome'}{role === 'farmer' ? ' 👨‍🌾' : ' 🧳'}
+            </Text>
           </View>
           <LangToggle variant="dark" />
-          <TouchableOpacity style={styles.notifBtn} onPress={clearNotifications}>
+          <TouchableOpacity style={styles.notifBtn} onPress={() => navigation.navigate('Missions')}>
             <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
             {notifications > 0 ? (
               <View style={styles.notifCount}>
@@ -292,27 +303,6 @@ export default function HomeScreen({ navigation }: Props) {
                 </TouchableOpacity>
               )}
             </LinearGradient>
-
-            {/* Marketplace category filter */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.marketCatScroll}
-              keyboardShouldPersistTaps="handled"
-            >
-              {MARKETPLACE_CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  onPress={() => setMarketCat(cat)}
-                  style={[styles.marketCatChip, marketCat === cat && styles.marketCatChipActive]}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.marketCatText, marketCat === cat && styles.marketCatTextActive]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
 
             {/* Marketplace cards */}
             <ScrollView
@@ -476,6 +466,9 @@ export default function HomeScreen({ navigation }: Props) {
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* ── Camera / AI Vision FAB ──────────────────────────────────────── */}
+      <CameraAnalyzer />
 
       {/* ── Subscription Modal ──────────────────────────────────────────── */}
       <Modal visible={showSubModal} transparent animationType="slide" onRequestClose={() => setShowSubModal(false)}>

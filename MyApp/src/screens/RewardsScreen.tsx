@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBadges } from '../context/BadgeContext';
-import { BADGE_DEFINITIONS, BADGE_CATEGORIES } from '../data/badgeData';
+import { BADGE_DEFINITIONS, BADGE_CATEGORIES, CATEGORY_THEMES } from '../data/badgeData';
 import { BadgeCategory } from '../types/badges';
 import BadgeCard from '../components/BadgeCard';
 import TokenBar from '../components/TokenBar';
@@ -118,13 +118,20 @@ export default function RewardsScreen({ navigation }: Props) {
       >
         {BADGE_CATEGORIES.map((cat) => {
           const active = activeCategory === cat;
+          const catTheme = CATEGORY_THEMES[cat];
           return (
             <TouchableOpacity
               key={cat}
               onPress={() => setActiveCategory(cat)}
-              style={[styles.catChip, active && styles.catChipActive]}
+              style={[
+                styles.catChip,
+                active && catTheme
+                  ? { backgroundColor: catTheme.accent, borderColor: catTheme.accent }
+                  : active && styles.catChipActive,
+              ]}
               activeOpacity={0.75}
             >
+              {catTheme && <Text style={styles.catChipIcon}>{catTheme.icon}</Text>}
               <Text style={[styles.catChipText, active && styles.catChipTextActive]}>{cat}</Text>
             </TouchableOpacity>
           );
@@ -133,14 +140,32 @@ export default function RewardsScreen({ navigation }: Props) {
 
       {/* ── Badge grid ────────────────────────────────────────────────── */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
-        {Object.entries(grouped).map(([category, badges]) => (
+        {Object.entries(grouped).map(([category, badges]) => {
+          const theme = CATEGORY_THEMES[category];
+          const unlockedInCat = badges.filter(
+            (b) => (userBadges[b.id]?.currentLevel ?? 0) > 0,
+          ).length;
+          return (
           <View key={category} style={styles.categorySection}>
             {/* Category header */}
-            <View style={styles.categoryHeader}>
-              <View style={styles.categoryLine} />
-              <Text style={styles.categoryTitle}>{category}</Text>
-              <View style={styles.categoryLine} />
-            </View>
+            {theme ? (
+              <LinearGradient
+                colors={theme.gradient as [string, string]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={styles.categoryHeader}
+              >
+                <Text style={styles.categoryIcon}>{theme.icon}</Text>
+                <Text style={styles.categoryTitle}>{category}</Text>
+                <View style={{ flex: 1 }} />
+                <Text style={styles.categoryCount}>{unlockedInCat}/{badges.length}</Text>
+              </LinearGradient>
+            ) : (
+              <View style={styles.categoryHeaderPlain}>
+                <View style={styles.categoryLine} />
+                <Text style={[styles.categoryTitle, { color: COLORS.textMedium }]}>{category}</Text>
+                <View style={styles.categoryLine} />
+              </View>
+            )}
 
             {/* Badge row — 3 per row */}
             <View style={styles.badgeRow}>
@@ -159,7 +184,8 @@ export default function RewardsScreen({ navigation }: Props) {
               }
             </View>
           </View>
-        ))}
+          );
+        })}
 
         <View style={{ height: 24 }} />
       </ScrollView>
@@ -226,24 +252,41 @@ const styles = StyleSheet.create({
   },
   catScroll: { paddingHorizontal: 14, alignItems: 'center', gap: 8 },
   catChip: {
-    paddingHorizontal: 16, paddingVertical: 9, borderRadius: 22,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 22,
     backgroundColor: COLORS.cardAlt,
     borderWidth: 1.5, borderColor: COLORS.border,
   },
   catChipActive: { backgroundColor: '#4A1D96', borderColor: '#4A1D96' },
-  catChipText: { fontSize: 13, fontWeight: '700', color: COLORS.textMedium },
+  catChipIcon: { fontSize: 13 },
+  catChipText: { fontSize: 12, fontWeight: '700', color: COLORS.textMedium },
   catChipTextActive: { color: COLORS.white },
 
   // Badge grid
   grid: { paddingHorizontal: 16, paddingTop: 8 },
 
-  categorySection: { marginBottom: 16 },
-  categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
-  categoryLine: { flex: 1, height: 1, backgroundColor: COLORS.divider },
+  categorySection: { marginBottom: 18 },
+
+  // Gradient themed header
+  categoryHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+    marginBottom: 10,
+  },
+  categoryIcon: { fontSize: 18 },
   categoryTitle: {
-    fontSize: 13, fontWeight: '800', color: COLORS.textMedium,
+    fontSize: 13, fontWeight: '800', color: COLORS.white,
     textTransform: 'uppercase', letterSpacing: 0.8,
   },
+  categoryCount: {
+    fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.75)',
+  },
+
+  // Fallback plain header (for 'Hamısı' etc.)
+  categoryHeaderPlain: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4,
+  },
+  categoryLine: { flex: 1, height: 1, backgroundColor: COLORS.divider },
 
   badgeRow: {
     flexDirection: 'row', flexWrap: 'wrap',

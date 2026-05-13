@@ -279,6 +279,20 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
 
   // ── Eco Turist ────────────────────────────────────────────────────────────
   {
+    id: 'camera_explorer',
+    azName: 'Kamera Kəşfiyyatçısı',
+    name: 'Camera Explorer',
+    description: 'Kamera ilə yer analiz et',
+    category: 'Eco Turist',
+    emoji: '📸',
+    activityType: 'camera_scan',
+    levels: [
+      { level: 1, target: 1,  rewardCoins: 30,  label: '1 skan'  },
+      { level: 2, target: 5,  rewardCoins: 75,  label: '5 skan'  },
+      { level: 3, target: 15, rewardCoins: 150, label: '15 skan' },
+    ],
+  },
+  {
     id: 'eco_tourist',
     azName: 'Yaşıl Turist',
     name: 'Eco Tourist',
@@ -334,3 +348,62 @@ export const BADGE_CATEGORIES = [
   'Eco Turist',
   'Legend',
 ] as const;
+
+/** Visual theme per category — drives BadgeCard colors and section headers. */
+export const CATEGORY_THEMES: Record<string, {
+  icon: string;
+  gradient: readonly [string, string];
+  accent: string;
+  cardTint: string;
+  lockedBg: string;
+}> = {
+  'Yeni Başlayan': {
+    icon: '🌅',
+    gradient: ['#0284C7', '#38BDF8'],
+    accent: '#0284C7',
+    cardTint: '#F0F9FF',
+    lockedBg: '#BAE6FD',
+  },
+  'Təcrübəli': {
+    icon: '⭐',
+    gradient: ['#1D4ED8', '#60A5FA'],
+    accent: '#1D4ED8',
+    cardTint: '#EFF6FF',
+    lockedBg: '#BFDBFE',
+  },
+  'Farm Hero': {
+    icon: '🌾',
+    gradient: ['#92400E', '#F59E0B'],
+    accent: '#D97706',
+    cardTint: '#FFFBEB',
+    lockedBg: '#FDE68A',
+  },
+  'Animal Friend': {
+    icon: '🐾',
+    gradient: ['#7C2D12', '#FB923C'],
+    accent: '#EA580C',
+    cardTint: '#FFF7ED',
+    lockedBg: '#FED7AA',
+  },
+  'Region Kəşfiyyatçısı': {
+    icon: '🗺️',
+    gradient: ['#0F766E', '#2DD4BF'],
+    accent: '#0F766E',
+    cardTint: '#F0FDFA',
+    lockedBg: '#99F6E4',
+  },
+  'Eco Turist': {
+    icon: '🌿',
+    gradient: ['#15803D', '#4ADE80'],
+    accent: '#16A34A',
+    cardTint: '#F0FDF4',
+    lockedBg: '#BBF7D0',
+  },
+  'Legend': {
+    icon: '👑',
+    gradient: ['#4A1D96', '#D97706'],
+    accent: '#7C3AED',
+    cardTint: '#FAF5FF',
+    lockedBg: '#DDD6FE',
+  },
+};

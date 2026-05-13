@@ -1,115 +1,178 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
+  View, Text, ScrollView, StyleSheet,
+  TouchableOpacity, Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import { useTokens } from '../context/TokenContext';
-import { useLanguage } from '../context/LanguageContext';
 import { useBadges } from '../context/BadgeContext';
+import { useUser } from '../context/UserContext';
+import { BADGE_DEFINITIONS, CATEGORY_THEMES } from '../data/badgeData';
 
 const { width } = Dimensions.get('window');
 
-// ── New user: Daşdəmir — fresh profile, nothing done yet ──────────────────────
-const DAILY_MISSIONS = [
-  { id: '1', title: 'Visit a Farm',         desc: 'Check in at any farm experience',   xp: 50,  progress: 0,   done: false, icon: 'leaf-outline',      color: COLORS.primary         },
-  { id: '2', title: 'Leave a Review',        desc: 'Rate any experience you visited',   xp: 30,  progress: 0,   done: false, icon: 'star-outline',      color: COLORS.goldLight       },
-  { id: '3', title: 'Complete Your Profile', desc: 'Add photo and bio to your profile', xp: 20,  progress: 0,   done: false, icon: 'person-outline',    color: '#5C6BC0'              },
-  { id: '4', title: 'Share an Experience',   desc: 'Share a place with a friend',       xp: 25,  progress: 0,   done: false, icon: 'share-outline',     color: '#26A69A'              },
-  { id: '5', title: 'Explore Historical',    desc: 'View 3 historical places',          xp: 40,  progress: 0,   done: false, icon: 'business-outline',  color: COLORS.historicalLight },
-];
+// ── Mission definitions ───────────────────────────────────────────────────────
+type MissionType = 'camera' | 'manual';
 
-const WEEKLY_CHALLENGES = [
-  { id: 'w1', title: 'Farm Explorer',  desc: 'Visit 3 different farm types',  xp: 150, progress: 0, icon: 'leaf',     color: COLORS.primary    },
-  { id: 'w2', title: 'History Buff',   desc: 'Visit 5 historical places',     xp: 200, progress: 0, icon: 'business', color: COLORS.historical  },
-  { id: 'w3', title: 'Top Reviewer',   desc: 'Write 5 detailed reviews',      xp: 100, progress: 0, icon: 'star',     color: COLORS.goldLight   },
-];
+interface Mission {
+  id: string;
+  emoji: string;
+  title: string;
+  desc: string;
+  reward: number;
+  color: string;
+  type: MissionType;
+  requiredCount: number;   // how many camera scans OR manual completes needed
+  activityType?: string;  // badge activity to trigger on complete
+}
 
-const BADGES = [
-  { id: 'b1', label: 'First Farm',   icon: 'leaf',         earned: false, color: COLORS.textLight },
-  { id: 'b2', label: 'Reviewer',     icon: 'star',         earned: false, color: COLORS.textLight },
-  { id: 'b3', label: 'Camper',       icon: 'flame',        earned: false, color: COLORS.textLight },
-  { id: 'b4', label: 'Food Lover',   icon: 'restaurant',   earned: false, color: COLORS.textLight },
-  { id: 'b5', label: 'Explorer',     icon: 'compass',      earned: false, color: COLORS.textLight },
-  { id: 'b6', label: 'Historian',    icon: 'business',     earned: false, color: COLORS.textLight },
-  { id: 'b7', label: 'Horse Rider',  icon: 'paw',          earned: false, color: COLORS.textLight },
-  { id: 'b8', label: 'Nature Lover', icon: 'partly-sunny', earned: false, color: COLORS.textLight },
+const MISSIONS: Mission[] = [
+  {
+    id: 'm1', emoji: '📸', title: 'First Camera Scan',
+    desc: 'Use the camera once to analyze any scene',
+    reward: 30, color: '#7C3AED', type: 'camera', requiredCount: 1,
+    activityType: 'camera_scan',
+  },
+  {
+    id: 'm2', emoji: '🎯', title: 'Camera Explorer',
+    desc: 'Scan 5 different places with the camera',
+    reward: 75, color: '#0284C7', type: 'camera', requiredCount: 5,
+    activityType: 'camera_scan',
+  },
+  {
+    id: 'm3', emoji: '📷', title: 'Photo Pro',
+    desc: 'Reach 15 camera scans total',
+    reward: 150, color: '#4F46E5', type: 'camera', requiredCount: 15,
+    activityType: 'camera_scan',
+  },
+  {
+    id: 'm4', emoji: '🌾', title: 'Farm Visit',
+    desc: 'Check in at any farm experience',
+    reward: 50, color: '#16A34A', type: 'manual', requiredCount: 1,
+    activityType: 'visit_farm',
+  },
+  {
+    id: 'm5', emoji: '🍎', title: 'Harvest Day',
+    desc: 'Pick fruits at an orchard',
+    reward: 40, color: '#EA580C', type: 'manual', requiredCount: 1,
+    activityType: 'gather_apple',
+  },
+  {
+    id: 'm6', emoji: '🐄', title: 'Animal Friend',
+    desc: 'Interact with and feed farm animals',
+    reward: 35, color: '#D97706', type: 'manual', requiredCount: 1,
+    activityType: 'feed_animal',
+  },
+  {
+    id: 'm7', emoji: '🏛️', title: 'History Explorer',
+    desc: 'Visit a historical site in Azerbaijan',
+    reward: 35, color: '#0F766E', type: 'manual', requiredCount: 1,
+    activityType: 'visit_region',
+  },
+  {
+    id: 'm8', emoji: '🌱', title: 'Go Green',
+    desc: 'Complete an eco-friendly activity',
+    reward: 40, color: '#15803D', type: 'manual', requiredCount: 1,
+    activityType: 'eco_activity',
+  },
+  {
+    id: 'm9', emoji: '🍽️', title: 'Local Taste',
+    desc: 'Try traditional Azerbaijani food',
+    reward: 30, color: '#DC2626', type: 'manual', requiredCount: 1,
+    activityType: 'try_local_food',
+  },
+  {
+    id: 'm10', emoji: '🐴', title: 'Horse Rider',
+    desc: 'Go horse riding in the countryside',
+    reward: 50, color: '#92400E', type: 'manual', requiredCount: 1,
+    activityType: 'horse_riding',
+  },
 ];
-
-// Maps mission id → activityType for badge integration
-const MISSION_ACTIVITY: Record<string, string> = {
-  '1': 'visit_farm',
-  '2': 'complete_activity',
-  '3': 'complete_activity',
-  '4': 'complete_activity',
-  '5': 'visit_region',
-};
 
 type Props = { navigation: any };
 
 export default function MissionsScreen({ navigation }: Props) {
-  const [tab, setTab] = useState<'daily' | 'weekly'>('daily');
-  const [claimed, setClaimed] = useState<string[]>([]);
-  const { balance, lifetime, addTokens } = useTokens();
-  const { completeActivity, getUnlockedCount } = useBadges();
-  const { t } = useLanguage();
+  const { balance, lifetime, cameraScans, addTokens } = useTokens();
+  const { username, role } = useUser();
+  const {
+    userBadges, completeActivity,
+    isLevelClaimable, claimBadgeLevel, getLevelReward,
+    getUnlockedCount,
+  } = useBadges();
 
-  const dailyDone = DAILY_MISSIONS.filter((m) => m.done).length;
+  const [claimedMissions, setClaimedMissions] = useState<string[]>([]);
 
-  const claimMission = (id: string, amount: number) => {
-    if (claimed.includes(id)) return;
-    addTokens(amount);
-    setClaimed((prev) => [...prev, id]);
-    // Also update badge progress
-    const activityType = MISSION_ACTIVITY[id];
-    if (activityType) completeActivity(activityType);
+  const level         = Math.floor(lifetime / 1000) + 1;
+  const levelProgress = (lifetime % 1000) / 1000;
+
+  // Compute mission progress
+  const getMissionProgress = (m: Mission): number => {
+    if (m.type === 'camera') return Math.min(cameraScans / m.requiredCount, 1);
+    return 0;
   };
 
-  // Derive level from lifetime tokens (every 1000 = 1 level)
-  const level = Math.floor(lifetime / 1000) + 1;
-  const levelProgress = (lifetime % 1000) / 1000;
+  const isMissionClaimable = (m: Mission): boolean =>
+    getMissionProgress(m) >= 1 && !claimedMissions.includes(m.id);
+
+  const isMissionClaimed = (m: Mission): boolean =>
+    claimedMissions.includes(m.id);
+
+  const claimMissionReward = (m: Mission) => {
+    if (!isMissionClaimable(m)) return;
+    addTokens(m.reward);
+    completeActivity(m.activityType ?? 'complete_activity');
+    setClaimedMissions((p) => [...p, m.id]);
+  };
+
+  // All claimable badge levels, grouped
+  const claimableBadges = useMemo(() =>
+    BADGE_DEFINITIONS.flatMap((def) =>
+      def.levels
+        .filter((lvl) => isLevelClaimable(def.id, lvl.level))
+        .map((lvl) => ({ def, level: lvl.level, coins: lvl.rewardCoins }))
+    ),
+  [userBadges, isLevelClaimable]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* ── Level / Token hero card ───────────────────────────────────── */}
-        <LinearGradient colors={[COLORS.gold, '#E6A817', '#F5C518']} style={styles.levelCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <View style={[styles.ldeco, { width: 180, height: 180, top: -60, right: -50 }]} />
-          <View style={[styles.ldeco, { width: 80, height: 80, bottom: -20, left: -20 }]} />
+        {/* ── Token hero card ───────────────────────────────────────────── */}
+        <LinearGradient
+          colors={[COLORS.gold, '#E6A817', '#F5C518']}
+          style={styles.heroCard}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        >
+          <View style={[styles.heroDeco, { width: 190, height: 190, top: -70, right: -50 }]} />
+          <View style={[styles.heroDeco, { width: 80, height: 80, bottom: -20, left: -20 }]} />
 
-          {/* Token balance — big & central */}
           <View style={styles.tokenHero}>
             <Text style={styles.tokenCoin}>🪙</Text>
-            <Text style={styles.tokenBalance}>{balance.toLocaleString()}</Text>
+            <Text style={styles.tokenBal}>{balance.toLocaleString()}</Text>
             <Text style={styles.tokenLabel}>Tokens</Text>
           </View>
 
           <View style={styles.levelRow}>
-            <View style={styles.levelBadge}>
+            <View style={styles.levelCircle}>
               <Text style={styles.levelNum}>{level}</Text>
             </View>
-            <View>
-              <Text style={styles.levelTitle}>Daşdəmir</Text>
-              <Text style={styles.levelSub}>{t.common.level} {level} · {lifetime.toLocaleString()} {t.missions.total}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.userName}>{username}</Text>
+              <Text style={styles.userSub}>{role === 'farmer' ? '👨‍🌾 Farmer' : '🧳 Tourist'} · Level {level} · {lifetime.toLocaleString()} total</Text>
             </View>
-            <View style={styles.streakBadge}>
-              <Ionicons name="flame" size={14} color="#E67E22" />
-              <Text style={styles.streakText}>7 day streak</Text>
+            <View style={styles.scanBadge}>
+              <Ionicons name="camera" size={13} color="#fff" />
+              <Text style={styles.scanText}>{cameraScans} scans</Text>
             </View>
           </View>
 
           <View style={styles.xpSection}>
-            <View style={styles.xpBarRow}>
+            <View style={styles.xpRow}>
               <Text style={styles.xpLabel}>Progress to Level {level + 1}</Text>
-              <Text style={styles.xpFrac}>{Math.round(levelProgress * 100)}%</Text>
+              <Text style={styles.xpPct}>{Math.round(levelProgress * 100)}%</Text>
             </View>
             <View style={styles.xpTrack}>
               <View style={[styles.xpFill, { width: `${levelProgress * 100}%` as any }]} />
@@ -119,65 +182,97 @@ export default function MissionsScreen({ navigation }: Props) {
           <View style={styles.statsRow}>
             {[
               { label: 'Balance',     value: balance.toLocaleString() },
-              { label: 'Mükafatlar', value: `${getUnlockedCount()}` },
-              { label: 'Claimed',     value: `${claimed.length}` },
+              { label: 'Badges',      value: `${getUnlockedCount()}` },
+              { label: 'Missions',    value: `${claimedMissions.length}` },
+              { label: 'Camera',      value: `${cameraScans}` },
             ].map((s) => (
               <View key={s.label} style={styles.statItem}>
                 <Text style={styles.statNum}>{s.value}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
+                <Text style={styles.statLbl}>{s.label}</Text>
               </View>
             ))}
           </View>
         </LinearGradient>
 
-        {/* ── Mission tabs + Rewards button ────────────────────────────── */}
-        <View style={styles.tabRow}>
-          {(['daily', 'weekly'] as const).map((tabKey) => (
-            <TouchableOpacity key={tabKey} onPress={() => setTab(tabKey)} style={[styles.tab, tab === tabKey && styles.tabActive]}>
-              <Text style={[styles.tabText, tab === tabKey && styles.tabTextActive]}>
-                {tabKey === 'daily' ? t.missions.daily : t.missions.weekly}
-
-              </Text>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity
-            style={styles.rewardsTab}
-            onPress={() => navigation.navigate('Rewards')}
+        {/* ── Pending reward banner ──────────────────────────────────────── */}
+        {claimableBadges.length > 0 && (
+          <LinearGradient
+            colors={['#4A1D96', '#7C3AED']}
+            style={styles.pendingBanner}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           >
-            <Ionicons name="ribbon" size={14} color="#4A1D96" />
-            <Text style={styles.rewardsTabText}>Mükafatlar</Text>
-          </TouchableOpacity>
+            <Ionicons name="ribbon" size={18} color="#F5C518" />
+            <Text style={styles.pendingText}>
+              {claimableBadges.length} reward{claimableBadges.length > 1 ? 's' : ''} ready to collect!
+            </Text>
+            <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.7)" />
+          </LinearGradient>
+        )}
+
+        {/* ── Missions section ──────────────────────────────────────────── */}
+        <View style={styles.secHeader}>
+          <Text style={styles.secIcon}>📋</Text>
+          <Text style={styles.secTitle}>Missions</Text>
+          <Text style={styles.secCount}>{claimedMissions.length}/{MISSIONS.length}</Text>
         </View>
 
-        {/* ── Mission list ─────────────────────────────────────────────── */}
         <View style={styles.missionList}>
-          {(tab === 'daily' ? DAILY_MISSIONS : WEEKLY_CHALLENGES).map((m) => {
-            const isClaimed = claimed.includes(m.id);
-            const canClaim  = m.progress >= 1.0 && !isClaimed;
+          {MISSIONS.map((m) => {
+            const prog     = getMissionProgress(m);
+            const claimable = isMissionClaimable(m);
+            const claimed  = isMissionClaimed(m);
+
             return (
-              <View key={m.id} style={[styles.missionCard, isClaimed && styles.missionCardDone]}>
-                <View style={[styles.missionIcon, { backgroundColor: m.color + '18' }]}>
-                  <Ionicons name={m.icon as any} size={22} color={isClaimed ? COLORS.textLight : m.color} />
+              <View
+                key={m.id}
+                style={[styles.mCard, claimed && styles.mCardDone]}
+              >
+                <View style={[styles.mIcon, { backgroundColor: m.color + '18' }]}>
+                  <Text style={styles.mEmoji}>{m.emoji}</Text>
                 </View>
-                <View style={styles.missionInfo}>
-                  <View style={styles.missionTitleRow}>
-                    <Text style={[styles.missionTitle, isClaimed && styles.missionTitleDone]}>{m.title}</Text>
-                    <View style={[styles.xpChip, { backgroundColor: m.color + '18' }]}>
-                      <Text style={styles.tokenMini}>🪙</Text>
-                      <Text style={[styles.xpChipText, { color: m.color }]}>{m.xp}</Text>
+                <View style={styles.mInfo}>
+                  <View style={styles.mTitleRow}>
+                    <Text style={[styles.mTitle, claimed && styles.mTitleDone]} numberOfLines={1}>
+                      {m.title}
+                    </Text>
+                    <View style={[styles.rewardChip, { backgroundColor: m.color + '15' }]}>
+                      <Text style={styles.rewardChipCoin}>🪙</Text>
+                      <Text style={[styles.rewardChipText, { color: m.color }]}>{m.reward}</Text>
                     </View>
                   </View>
-                  <Text style={styles.missionDesc}>{m.desc}</Text>
-                  <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${m.progress * 100}%` as any, backgroundColor: isClaimed ? COLORS.success : m.color }]} />
-                  </View>
-                  <View style={styles.missionBottom}>
-                    <Text style={styles.progressLabel}>
-                      {isClaimed ? '✓ Claimed' : `${Math.round(m.progress * 100)}% complete`}
+                  <Text style={styles.mDesc}>{m.desc}</Text>
+
+                  {m.type === 'camera' ? (
+                    <Text style={styles.cameraHint}>
+                      📸 {cameraScans}/{m.requiredCount} scans · Tap the camera button on any screen
                     </Text>
-                    {canClaim && (
-                      <TouchableOpacity style={styles.claimBtn} onPress={() => claimMission(m.id, m.xp)}>
-                        <Text style={styles.claimBtnText}>Claim 🪙{m.xp}</Text>
+                  ) : !claimed && (
+                    <Text style={styles.howToHint}>
+                      💡 Complete this activity in the app to unlock
+                    </Text>
+                  )}
+
+                  {/* Progress bar */}
+                  <View style={styles.progTrack}>
+                    <View
+                      style={[styles.progFill, {
+                        width: `${prog * 100}%` as any,
+                        backgroundColor: claimed ? COLORS.success : m.color,
+                      }]}
+                    />
+                  </View>
+
+                  <View style={styles.mBottom}>
+                    <Text style={styles.progLabel}>
+                      {claimed ? '✓ Collected' : prog >= 1 ? '✓ Ready to collect' : `${Math.round(prog * 100)}% complete`}
+                    </Text>
+                    {claimable && (
+                      <TouchableOpacity
+                        style={[styles.collectBtn, { backgroundColor: m.color }]}
+                        onPress={() => claimMissionReward(m)}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={styles.collectBtnText}>Collect 🪙{m.reward}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -187,29 +282,109 @@ export default function MissionsScreen({ navigation }: Props) {
           })}
         </View>
 
-        {/* ── Achievements ─────────────────────────────────────────────── */}
-        <View style={styles.secRow}>
-          <Text style={styles.secTitle}>Achievement Badges</Text>
-          <Text style={styles.secSub}>{BADGES.filter(b => b.earned).length}/{BADGES.length} earned</Text>
+        {/* ── Rewards section ───────────────────────────────────────────── */}
+        <View style={[styles.secHeader, { marginTop: 12 }]}>
+          <Text style={styles.secIcon}>🏆</Text>
+          <Text style={styles.secTitle}>Rewards</Text>
+          <Text style={styles.secCount}>{getUnlockedCount()}/{BADGE_DEFINITIONS.length}</Text>
         </View>
 
-        <View style={styles.badgeGrid}>
-          {BADGES.map((b) => (
-            <View key={b.id} style={[styles.badgeCard, !b.earned && styles.badgeCardLocked]}>
-              <View style={[styles.badgeIcon, { backgroundColor: b.earned ? b.color + '18' : COLORS.cardAlt }]}>
-                <Ionicons name={b.icon as any} size={26} color={b.earned ? b.color : COLORS.textLight} />
-                {!b.earned && (
-                  <View style={styles.lockOverlay}>
-                    <Ionicons name="lock-closed" size={12} color={COLORS.textLight} />
+        {/* Group badges by category */}
+        {(() => {
+          const grouped: Record<string, typeof BADGE_DEFINITIONS> = {};
+          BADGE_DEFINITIONS.forEach((b) => {
+            if (!grouped[b.category]) grouped[b.category] = [];
+            grouped[b.category].push(b);
+          });
+          return Object.entries(grouped).map(([cat, defs]) => {
+            const theme = CATEGORY_THEMES[cat];
+            return (
+              <View key={cat} style={styles.catGroup}>
+                {/* Category header */}
+                {theme ? (
+                  <LinearGradient
+                    colors={theme.gradient as [string, string]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={styles.catHeader}
+                  >
+                    <Text style={styles.catIcon}>{theme.icon}</Text>
+                    <Text style={styles.catTitle}>{cat}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.catHeaderPlain}>
+                    <Text style={styles.catTitlePlain}>{cat}</Text>
                   </View>
                 )}
-              </View>
-              <Text style={[styles.badgeLabel, !b.earned && styles.badgeLabelLocked]}>{b.label}</Text>
-            </View>
-          ))}
-        </View>
 
-        <View style={{ height: 20 }} />
+                {/* Badge rows */}
+                {defs.map((def) => {
+                  const badge    = userBadges[def.id] ?? { id: def.id, currentProgress: 0, currentLevel: 0, claimedLevels: [] };
+                  const progress = badge.currentProgress;
+                  const theme2   = CATEGORY_THEMES[def.category];
+
+                  return (
+                    <View key={def.id} style={styles.badgeRow}>
+                      {/* Emoji circle */}
+                      <View style={[
+                        styles.badgeCircle,
+                        { backgroundColor: badge.currentLevel > 0 ? (theme2?.accent ?? COLORS.primary) : COLORS.border },
+                      ]}>
+                        <Text style={styles.badgeEmoji}>{def.emoji}</Text>
+                      </View>
+
+                      {/* Info */}
+                      <View style={styles.badgeInfo}>
+                        <View style={styles.badgeTitleRow}>
+                          <Text style={styles.badgeName}>{def.azName}</Text>
+                          {badge.currentLevel > 0 && (
+                            <Text style={styles.badgeLvl}>Lv.{badge.currentLevel}</Text>
+                          )}
+                        </View>
+
+                        {/* Progress bar toward next level */}
+                        {(() => {
+                          const nextLvl = def.levels.find((l) => l.level === Math.min(badge.currentLevel + 1, 3) as 1|2|3)
+                                       ?? def.levels[def.levels.length - 1];
+                          const ratio = Math.min(progress / nextLvl.target, 1);
+                          return (
+                            <View style={styles.badgeProgTrack}>
+                              <View style={[styles.badgeProgFill, {
+                                width: `${ratio * 100}%` as any,
+                                backgroundColor: theme2?.accent ?? COLORS.primary,
+                              }]} />
+                            </View>
+                          );
+                        })()}
+
+                        <Text style={styles.badgeProgLabel}>
+                          {progress}/{def.levels.find((l) => l.level === Math.min(badge.currentLevel + 1, 3) as 1|2|3)?.target ?? def.levels[2].target}
+                        </Text>
+                      </View>
+
+                      {/* Claim buttons for each unlocked unclaimed level */}
+                      <View style={styles.claimCol}>
+                        {def.levels.map((lvl) =>
+                          isLevelClaimable(def.id, lvl.level) ? (
+                            <TouchableOpacity
+                              key={lvl.level}
+                              style={[styles.claimBtn, { backgroundColor: theme2?.accent ?? COLORS.primary }]}
+                              onPress={() => claimBadgeLevel(def.id, lvl.level)}
+                              activeOpacity={0.8}
+                            >
+                              <Text style={styles.claimBtnText}>🪙{lvl.rewardCoins}</Text>
+                            </TouchableOpacity>
+                          ) : null
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          });
+        })()}
+
+        <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -218,108 +393,130 @@ export default function MissionsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
 
-  // Level card
-  levelCard: { padding: 20, gap: 14, overflow: 'hidden' },
-
-  // Token hero
+  // Hero card
+  heroCard: { padding: 20, gap: 14, overflow: 'hidden' },
+  heroDeco: { position: 'absolute', borderRadius: 200, backgroundColor: 'rgba(255,255,255,0.12)' },
   tokenHero: { alignItems: 'center', gap: 2 },
   tokenCoin: { fontSize: 36 },
-  tokenBalance: { fontSize: 42, fontWeight: '900', color: COLORS.white, letterSpacing: -1 },
+  tokenBal:  { fontSize: 44, fontWeight: '900', color: COLORS.white, letterSpacing: -1 },
   tokenLabel: { fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
-  ldeco: { position: 'absolute', borderRadius: 200, backgroundColor: 'rgba(255,255,255,0.12)' },
-  levelRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  levelBadge: {
+
+  levelRow:   { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  levelCircle: {
     width: 52, height: 52, borderRadius: 26,
     backgroundColor: 'rgba(255,255,255,0.25)',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.5)',
   },
-  levelNum: { fontSize: 22, fontWeight: '900', color: COLORS.white },
-  levelTitle: { fontSize: 18, fontWeight: '800', color: COLORS.white },
-  levelSub: { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
-  streakBadge: {
-    marginLeft: 'auto' as any,
+  levelNum:  { fontSize: 22, fontWeight: '900', color: COLORS.white },
+  userName:  { fontSize: 18, fontWeight: '800', color: COLORS.white },
+  userSub:   { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
+  scanBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
   },
-  streakText: { fontSize: 11, color: COLORS.white, fontWeight: '700' },
+  scanText: { fontSize: 11, color: COLORS.white, fontWeight: '700' },
 
-  xpSection: { gap: 8 },
-  xpBarRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  xpLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
-  xpFrac: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '700' },
-  xpTrack: { height: 10, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 5, overflow: 'hidden' },
-  xpFill: { height: '100%', backgroundColor: COLORS.white, borderRadius: 5 },
+  xpSection: { gap: 6 },
+  xpRow:    { flexDirection: 'row', justifyContent: 'space-between' },
+  xpLabel:  { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
+  xpPct:    { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '700' },
+  xpTrack:  { height: 10, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 5, overflow: 'hidden' },
+  xpFill:   { height: '100%', backgroundColor: COLORS.white, borderRadius: 5 },
 
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { alignItems: 'center', gap: 2 },
-  statNum: { fontSize: 20, fontWeight: '800', color: COLORS.white },
-  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.75)' },
+  statNum:  { fontSize: 18, fontWeight: '800', color: COLORS.white },
+  statLbl:  { fontSize: 10, color: 'rgba(255,255,255,0.75)' },
 
-  // Tabs
-  tabRow: {
-    flexDirection: 'row', backgroundColor: COLORS.card,
-    borderBottomWidth: 1, borderBottomColor: COLORS.divider,
+  // Pending banner
+  pendingBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 12,
   },
-  tab: { flex: 1, paddingVertical: 14, alignItems: 'center', borderBottomWidth: 2.5, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: COLORS.gold },
-  tabText: { fontSize: 14, fontWeight: '600', color: COLORS.textLight },
-  tabTextActive: { color: COLORS.textDark },
-  rewardsTab: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 12, paddingVertical: 14,
-    backgroundColor: '#EDE9FE',
-    borderBottomWidth: 2.5, borderBottomColor: '#4A1D96',
-  },
-  rewardsTabText: { fontSize: 13, fontWeight: '700', color: '#4A1D96' },
+  pendingText: { flex: 1, fontSize: 13, fontWeight: '700', color: COLORS.white },
 
-  // Missions
-  missionList: { padding: 16, gap: 10 },
-  missionCard: {
+  // Section header
+  secHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8,
+  },
+  secIcon:  { fontSize: 18 },
+  secTitle: { fontSize: 18, fontWeight: '800', color: COLORS.textDark, flex: 1 },
+  secCount: { fontSize: 13, fontWeight: '700', color: COLORS.textLight },
+
+  // Mission cards
+  missionList: { paddingHorizontal: 16, gap: 10 },
+  mCard: {
     flexDirection: 'row', gap: 12,
     backgroundColor: COLORS.card, borderRadius: 14, padding: 14,
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1, shadowRadius: 6, elevation: 2,
   },
-  missionCardDone: { opacity: 0.65 },
-  missionIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  missionInfo: { flex: 1, gap: 4 },
-  missionTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  missionTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textDark, flex: 1 },
-  missionTitleDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
-  xpChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  xpChipText: { fontSize: 11, fontWeight: '700' },
-  tokenMini: { fontSize: 11 },
-  missionDesc: { fontSize: 12, color: COLORS.textLight },
-  progressTrack: { height: 5, backgroundColor: COLORS.divider, borderRadius: 3, overflow: 'hidden', marginTop: 4 },
-  progressFill: { height: '100%', borderRadius: 3 },
-  progressLabel: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
-  missionBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
-  claimBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
-  claimBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.white },
-
-  // Section
-  secRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 20, marginBottom: 12 },
-  secTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textDark },
-  secSub: { fontSize: 13, color: COLORS.textLight, fontWeight: '500' },
-
-  // Badges
-  badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 10 },
-  badgeCard: {
-    width: (width - 56) / 4, alignItems: 'center', gap: 6,
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 10,
-    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 1, shadowRadius: 4, elevation: 1,
+  mCardDone: { opacity: 0.6 },
+  mIcon: {
+    width: 46, height: 46, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center',
+    alignSelf: 'flex-start',
   },
-  badgeCardLocked: { opacity: 0.55 },
-  badgeIcon: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  lockOverlay: {
-    position: 'absolute', bottom: 0, right: 0,
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: COLORS.cardAlt, borderWidth: 1, borderColor: COLORS.border,
+  mEmoji: { fontSize: 22 },
+  mInfo:  { flex: 1, gap: 4 },
+  mTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  mTitle:     { fontSize: 14, fontWeight: '700', color: COLORS.textDark, flex: 1 },
+  mTitleDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
+  rewardChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+  },
+  rewardChipCoin: { fontSize: 11 },
+  rewardChipText: { fontSize: 11, fontWeight: '700' },
+  mDesc:       { fontSize: 12, color: COLORS.textLight, lineHeight: 17 },
+  cameraHint:  { fontSize: 11, color: '#7C3AED', fontWeight: '600', marginTop: 2 },
+  howToHint:   { fontSize: 11, color: COLORS.textLight, fontStyle: 'italic', marginTop: 2 },
+  progTrack:   { height: 5, backgroundColor: COLORS.divider, borderRadius: 3, overflow: 'hidden', marginTop: 4 },
+  progFill:    { height: '100%', borderRadius: 3 },
+  mBottom:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  progLabel:   { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
+  collectBtn: {
+    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10,
+  },
+  collectBtnText: { fontSize: 12, fontWeight: '800', color: COLORS.white },
+
+  // Rewards / badges
+  catGroup: { marginBottom: 4 },
+  catHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 16, marginBottom: 6, marginTop: 8,
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
+  },
+  catIcon:      { fontSize: 16 },
+  catTitle:     { fontSize: 12, fontWeight: '800', color: COLORS.white, textTransform: 'uppercase', letterSpacing: 0.7 },
+  catHeaderPlain: {
+    paddingHorizontal: 16, paddingVertical: 6,
+  },
+  catTitlePlain: { fontSize: 12, fontWeight: '800', color: COLORS.textMedium, textTransform: 'uppercase', letterSpacing: 0.7 },
+
+  badgeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 8,
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1, borderBottomColor: COLORS.divider,
+  },
+  badgeCircle: {
+    width: 42, height: 42, borderRadius: 21,
     justifyContent: 'center', alignItems: 'center',
   },
-  badgeLabel: { fontSize: 10, fontWeight: '600', color: COLORS.textDark, textAlign: 'center' },
-  badgeLabelLocked: { color: COLORS.textLight },
+  badgeEmoji: { fontSize: 20 },
+  badgeInfo:  { flex: 1, gap: 3 },
+  badgeTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  badgeName:  { fontSize: 13, fontWeight: '700', color: COLORS.textDark, flex: 1 },
+  badgeLvl:   { fontSize: 10, fontWeight: '800', color: COLORS.primary },
+  badgeProgTrack: { height: 4, backgroundColor: COLORS.divider, borderRadius: 2, overflow: 'hidden' },
+  badgeProgFill:  { height: '100%', borderRadius: 2 },
+  badgeProgLabel: { fontSize: 10, color: COLORS.textLight },
+
+  claimCol:  { justifyContent: 'center', gap: 4 },
+  claimBtn:  { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  claimBtnText: { fontSize: 11, fontWeight: '800', color: COLORS.white },
 });

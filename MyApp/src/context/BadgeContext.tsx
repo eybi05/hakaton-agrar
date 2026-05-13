@@ -1,9 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { BADGE_DEFINITIONS } from '../data/badgeData';
 import { UserBadge } from '../types/badges';
 import { useTokens } from './TokenContext';
 
-// ── Initial user state — all badges at 0 progress ────────────────────────────
 const buildInitialState = (): Record<string, UserBadge> => {
   const state: Record<string, UserBadge> = {};
   BADGE_DEFINITIONS.forEach((b) => {
@@ -12,85 +11,111 @@ const buildInitialState = (): Record<string, UserBadge> => {
   return state;
 };
 
-// ── Context types ─────────────────────────────────────────────────────────────
 interface BadgeContextType {
   userBadges: Record<string, UserBadge>;
   notifications: number;
   completeActivity: (activityType: string, times?: number) => void;
+  claimBadgeLevel: (id: string, level: number) => void;
   clearNotifications: () => void;
   getUnlockedCount: () => number;
   getTotalCount: () => number;
   getUserBadge: (id: string) => UserBadge;
+  isLevelClaimable: (id: string, level: number) => boolean;
+  getLevelReward: (id: string, level: number) => number;
 }
 
 const BadgeContext = createContext<BadgeContextType>({
   userBadges: {},
   notifications: 0,
   completeActivity: () => {},
+  claimBadgeLevel: () => {},
   clearNotifications: () => {},
   getUnlockedCount: () => 0,
   getTotalCount: () => 0,
   getUserBadge: (id) => ({ id, currentProgress: 0, currentLevel: 0, claimedLevels: [] }),
+  isLevelClaimable: () => false,
+  getLevelReward: () => 0,
 });
 
 export const useBadges = () => useContext(BadgeContext);
 
-// ── Provider ──────────────────────────────────────────────────────────────────
 export function BadgeProvider({ children }: { children: ReactNode }) {
   const { addTokens } = useTokens();
-  const [userBadges, setUserBadges]   = useState<Record<string, UserBadge>>(buildInitialState);
-  const [notifications, setNotifications] = useState(0);
-
-  const clearNotifications = useCallback(() => setNotifications(0), []);
+  const [userBadges, setUserBadges] = useState<Record<string, UserBadge>>(buildInitialState);
 
   /**
-   * Call this whenever the user completes an activity.
-   * It finds matching badges, increments their progress,
-   * checks for level-ups and awards coins exactly once per level.
+   * Increments badge progress. Does NOT auto-award tokens.
+   * Tokens are only awarded when the user explicitly calls claimBadgeLevel().
    */
-  const completeActivity = useCallback(
-    (activityType: string, times = 1) => {
-      const matchingBadges = BADGE_DEFINITIONS.filter((b) => b.activityType === activityType);
-      if (matchingBadges.length === 0) return;
+  const completeActivity = useCallback((activityType: string, times = 1) => {
+    const matching = BADGE_DEFINITIONS.filter((b) => b.activityType === activityType);
+    if (!matching.length) return;
 
-      setUserBadges((prev) => {
-        const next = { ...prev };
-
-        matchingBadges.forEach((def) => {
-          const current = { ...next[def.id] };
-          current.currentProgress = current.currentProgress + times;
-
-          let coinsEarned = 0;
-
-          // Check each level in order
-          for (const lvl of def.levels) {
-            if (
-              current.currentProgress >= lvl.target &&
-              !current.claimedLevels.includes(lvl.level)
-            ) {
-              current.currentLevel = lvl.level as 1 | 2 | 3;
-              current.claimedLevels = [...current.claimedLevels, lvl.level];
-              coinsEarned += lvl.rewardCoins;
-            }
+    setUserBadges((prev) => {
+      const next = { ...prev };
+      matching.forEach((def) => {
+        const current = { ...next[def.id] };
+        current.currentProgress += times;
+        // Update currentLevel based on reached thresholds (not claimed)
+        for (const lvl of def.levels) {
+          if (current.currentProgress >= lvl.target && current.currentLevel < lvl.level) {
+            current.currentLevel = lvl.level as 1 | 2 | 3;
           }
-
-          if (coinsEarned > 0) {
-              addTokens(coinsEarned);
-              setNotifications((n) => n + 1);
-            }
-
-          next[def.id] = current;
-        });
-
-        return next;
+        }
+        next[def.id] = current;
       });
-    },
-    [addTokens],
-  );
+      return next;
+    });
+  }, []);
 
-  const getUnlockedCount = useCallback(() => {
-    return Object.values(userBadges).filter((b) => b.currentLevel > 0).length;
+  /**
+   * User explicitly claims a badge level reward.
+   * Awards tokens and marks the level as claimed (prevents reclaim).
+   */
+  const claimBadgeLevel = useCallback((id: string, level: number) => {
+    const def    = BADGE_DEFINITIONS.find((b) => b.id === id);
+    const lvlDef = def?.levels.find((l) => l.level === level);
+    if (!def || !lvlDef) return;
+
+    setUserBadges((prev) => {
+      const current = prev[id];
+      if (!current || current.claimedLevels.includes(level)) return prev;
+      return {
+        ...prev,
+        [id]: { ...current, claimedLevels: [...current.claimedLevels, level] },
+      };
+    });
+    addTokens(lvlDef.rewardCoins);
+  }, [addTokens]);
+
+  /**
+   * True when a badge level has been reached but tokens not yet collected.
+   */
+  const isLevelClaimable = useCallback((id: string, level: number): boolean => {
+    const badge = userBadges[id];
+    return !!(badge && badge.currentLevel >= level && !badge.claimedLevels.includes(level));
   }, [userBadges]);
+
+  const getLevelReward = useCallback((id: string, level: number): number => {
+    return BADGE_DEFINITIONS.find((b) => b.id === id)?.levels.find((l) => l.level === level)?.rewardCoins ?? 0;
+  }, []);
+
+  // Notifications = count of unclaimed ready badge levels
+  const notifications = useMemo(() => {
+    return BADGE_DEFINITIONS.reduce((total, def) => {
+      const badge = userBadges[def.id];
+      if (!badge) return total;
+      return total + def.levels.filter(
+        (lvl) => badge.currentLevel >= lvl.level && !badge.claimedLevels.includes(lvl.level),
+      ).length;
+    }, 0);
+  }, [userBadges]);
+
+  const clearNotifications = useCallback(() => {}, []); // Computed — no-op, kept for interface compat
+
+  const getUnlockedCount = useCallback(() =>
+    Object.values(userBadges).filter((b) => b.currentLevel > 0).length,
+  [userBadges]);
 
   const getTotalCount = useCallback(() => BADGE_DEFINITIONS.length, []);
 
@@ -101,7 +126,12 @@ export function BadgeProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <BadgeContext.Provider value={{ userBadges, notifications, completeActivity, clearNotifications, getUnlockedCount, getTotalCount, getUserBadge }}>
+    <BadgeContext.Provider value={{
+      userBadges, notifications,
+      completeActivity, claimBadgeLevel, clearNotifications,
+      getUnlockedCount, getTotalCount, getUserBadge,
+      isLevelClaimable, getLevelReward,
+    }}>
       {children}
     </BadgeContext.Provider>
   );

@@ -21,13 +21,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
-// ── DeepSeek API ─────────────────────────────────────────────────────────────
-// 1. Get your key at: https://platform.deepseek.com/api_keys
-// 2. Paste it below and run:  npx expo start --clear
-const DEEPSEEK_API_KEY = 'sk-f06422fcc0e24efba93af049879f25b7';
-
-const DEEPSEEK_URL   = 'https://api.deepseek.com/chat/completions';
-const DEEPSEEK_MODEL = 'deepseek-v4-flash';   // fastest — change to 'deepseek-v4-pro' for higher quality
+import { DEEPSEEK_API_KEY, DEEPSEEK_URL, DEEPSEEK_MODEL } from '../config/api';
 
 const SYSTEM_PROMPT = `You are AgroBot, a friendly and knowledgeable agro-tourism assistant for Azerbaijan.
 You help visitors discover farms, historical places, village tours, horse riding, camping, organic food experiences, local hotels, traditional foods, and nature activities across Azerbaijan.
