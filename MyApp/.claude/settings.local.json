@@ -4,7 +4,12 @@
       "PowerShell(Copy-Item *)",
       "Bash(node gen-icon.js)",
       "Bash(npx expo *)",
-      "Bash(node convert-icon.js)"
+      "Bash(node convert-icon.js)",
+      "Bash(mkdir -p historical/1_maiden_tower historical/2_icheri_sheher historical/3_sheki_palace historical/4_gobustan historical/5_ateshgah historical/6_alinja_castle historical/7_momine_khatun historical/8_diri_baba historical/9_khizi_mountains historical/10_lavender_fields historical/11_st_george_church historical/12_gurgur_waterfall)",
+      "Bash(touch __TRACKED_VAR__.gitkeep)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(node download-images.js)",
+      "WebSearch"
     ]
   }
 }
