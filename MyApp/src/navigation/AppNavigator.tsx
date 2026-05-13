@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 
 import HomeStack from './HomeStack';
 import HistoricalStack from './HistoricalStack';
@@ -14,19 +14,19 @@ import { useLanguage } from '../context/LanguageContext';
 const Tab = createBottomTabNavigator();
 
 const TABS = [
-  { name: 'Home',       component: HomeStack,       icon: 'home',        navKey: 'home'       },
-  { name: 'Historical', component: HistoricalStack, icon: 'business',    navKey: 'historical' },
-  { name: 'Farming',    component: FarmingStack,    icon: 'leaf',        navKey: 'farming'    },
-  { name: 'Missions',   component: MissionsStack,   icon: 'trophy',      navKey: 'missions'   },
-  { name: 'AgroBot',    component: ChatbotScreen,   icon: 'chatbubbles', navKey: 'chatbot'    },
+  { name: 'Home',       component: HomeStack,       icon: 'home',        label: '🏡', navKey: 'home'       },
+  { name: 'Historical', component: HistoricalStack, icon: 'business',    label: '🏛️', navKey: 'historical' },
+  { name: 'Farming',    component: FarmingStack,    icon: 'leaf',        label: '🌾', navKey: 'farming'    },
+  { name: 'Missions',   component: MissionsStack,   icon: 'trophy',      label: '🎯', navKey: 'missions'   },
+  { name: 'AgroBot',    component: ChatbotScreen,   icon: 'chatbubbles', label: '🤖', navKey: 'chatbot'    },
 ] as const;
 
 const ACTIVE_COLORS: Record<string, string> = {
-  Home:       COLORS.primary,
-  Historical: COLORS.historical,
-  Farming:    COLORS.primary,
-  Missions:   COLORS.gold,
-  AgroBot:    COLORS.aiLight,
+  Home:       '#1B4332',
+  Historical: '#1A3A6E',
+  Farming:    '#1B4332',
+  Missions:   '#A0522D',
+  AgroBot:    '#4A1D96',
 };
 
 export default function AppNavigator() {
@@ -34,27 +34,34 @@ export default function AppNavigator() {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarActiveTintColor: ACTIVE_COLORS[route.name] ?? COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textLight,
-        tabBarIcon: ({ focused, color, size }) => {
-          const tab = TABS.find((t) => t.name === route.name);
-          const iconName = tab
-            ? focused ? tab.icon : (`${tab.icon}-outline` as any)
-            : 'ellipse-outline';
-
-          const activeColor = ACTIVE_COLORS[route.name] ?? COLORS.primary;
-          return (
-            <View style={[styles.iconWrap, focused && { backgroundColor: activeColor + '18' }]}>
-              <Ionicons name={iconName} size={21} color={color} />
-            </View>
-          );
-        },
-      })}
+      screenOptions={({ route }) => {
+        const activeColor = ACTIVE_COLORS[route.name] ?? COLORS.primary;
+        return {
+          headerShown: false,
+          tabBarShowLabel: true,
+          tabBarStyle: styles.tabBar,
+          tabBarLabelStyle: styles.tabLabel,
+          tabBarActiveTintColor: activeColor,
+          tabBarInactiveTintColor: COLORS.textLight,
+          tabBarIcon: ({ focused, color }) => {
+            const tab = TABS.find((t) => t.name === route.name);
+            const iconName = tab
+              ? focused ? tab.icon : (`${tab.icon}-outline` as any)
+              : 'ellipse-outline';
+            return (
+              <View style={[
+                styles.iconWrap,
+                focused && { backgroundColor: activeColor + '1A' },
+              ]}>
+                {focused ? (
+                  <View style={[styles.activeDot, { backgroundColor: activeColor }]} />
+                ) : null}
+                <Ionicons name={iconName} size={20} color={color} />
+              </View>
+            );
+          },
+        };
+      }}
     >
       {TABS.map((tab) => (
         <Tab.Screen
@@ -70,26 +77,33 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: COLORS.white,
-    borderTopWidth: 0,
+    backgroundColor: 'rgba(245,239,230,0.98)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(180,158,130,0.22)',
     elevation: 24,
-    shadowColor: 'rgba(0,0,0,0.15)',
-    shadowOffset: { width: 0, height: -6 },
+    shadowColor: 'rgba(13,27,13,0.2)',
+    shadowOffset: { width: 0, height: -5 },
     shadowOpacity: 1,
-    shadowRadius: 16,
-    height: Platform.OS === 'ios' ? 86 : 66,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+    shadowRadius: 18,
+    height: Platform.OS === 'ios' ? 90 : 72,
+    paddingBottom: Platform.OS === 'ios' ? 26 : 12,
     paddingTop: 8,
   },
   tabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: -3,
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: -1,
+    letterSpacing: 0.2,
   },
   iconWrap: {
-    width: 36, height: 36,
-    borderRadius: 18,
+    width: 42, height: 38,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  activeDot: {
+    position: 'absolute',
+    top: 4, width: 4, height: 4, borderRadius: 2,
   },
 });

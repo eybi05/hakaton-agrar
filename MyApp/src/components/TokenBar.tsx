@@ -20,7 +20,7 @@ export default function TokenBar({ onPress }: Props) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.92} style={styles.wrapper}>
       <LinearGradient
-        colors={['#8B6400', COLORS.gold, '#E6A817']}
+        colors={['#7C3810', COLORS.gold, '#D4814A']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.bar}
@@ -48,7 +48,7 @@ export default function TokenBar({ onPress }: Props) {
           activeOpacity={0.8}
           onPress={() => navigation.navigate('Missions')}
         >
-          <Ionicons name="add" size={11} color={COLORS.gold} />
+          <Ionicons name="add" size={13} color={COLORS.gold} />
           <Text style={styles.earnText}>Earn</Text>
         </TouchableOpacity>
       </LinearGradient>
@@ -58,40 +58,40 @@ export default function TokenBar({ onPress }: Props) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginHorizontal: 16,
-    marginVertical: 3,
-    borderRadius: 10,
+    marginHorizontal: 20,
+    marginVertical: 8,
+    borderRadius: 16,
     shadowColor: COLORS.gold,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.28,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    gap: 10,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    gap: 12,
     overflow: 'hidden',
   },
-  left:    { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  coin:    { fontSize: 16 },
-  balance: { fontSize: 15, fontWeight: '900', color: COLORS.white, letterSpacing: -0.3 },
-  label:   { fontSize: 9, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
+  left:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  coin:    { fontSize: 20 },
+  balance: { fontSize: 17, fontWeight: '900', color: COLORS.white, letterSpacing: -0.3 },
+  label:   { fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
 
-  divider: { width: 1, height: 22, backgroundColor: 'rgba(255,255,255,0.25)' },
+  divider: { width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.25)' },
 
-  mid:           { flex: 1, gap: 3 },
-  levelText:     { fontSize: 10, fontWeight: '800', color: COLORS.white },
-  progressTrack: { height: 3, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 2, overflow: 'hidden' },
-  progressFill:  { height: '100%', backgroundColor: COLORS.white, borderRadius: 2 },
+  mid:           { flex: 1, gap: 4 },
+  levelText:     { fontSize: 11, fontWeight: '800', color: COLORS.white },
+  progressTrack: { height: 5, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 3, overflow: 'hidden' },
+  progressFill:  { height: '100%', backgroundColor: COLORS.white, borderRadius: 3 },
 
   earnBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 2,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: COLORS.white,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 7,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10,
   },
-  earnText: { fontSize: 10, fontWeight: '800', color: COLORS.gold },
+  earnText: { fontSize: 11, fontWeight: '800', color: COLORS.gold },
 });

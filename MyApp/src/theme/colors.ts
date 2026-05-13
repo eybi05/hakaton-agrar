@@ -1,50 +1,50 @@
 export const COLORS = {
-  // Primary greens
-  primary: '#1B5E3B',
-  primaryDark: '#0D3D24',
-  primaryLight: '#2D9D63',
-  primaryXLight: '#C8F0D8',
+  // ── Primary — deep forest / sage green ──────────────────────────────
+  primary:       '#1B4332',   // deep forest green
+  primaryDark:   '#0D2B1F',   // almost-black forest
+  primaryLight:  '#52796F',   // sage green
+  primaryXLight: '#D4E6DF',   // pale sage mist
 
-  // Gold accent — missions, ratings, premium
-  gold: '#B8860B',
-  goldLight: '#F5C518',
-  goldXLight: '#FFF8E1',
+  // ── Gold / amber / terracotta ────────────────────────────────────────
+  gold:          '#A0522D',   // warm sienna
+  goldLight:     '#D4814A',   // terracotta amber
+  goldXLight:    '#FDF1E4',   // warm cream
 
-  // Historical blue
-  historical: '#1A3A6E',
+  // ── Historical blue ─────────────────────────────────────────────────
+  historical:      '#1A3A6E',
   historicalLight: '#3B6CB0',
-  historicalXLight: '#E3ECFA',
+  historicalXLight:'#E3ECFA',
 
-  // AI purple
+  // ── AI purple ────────────────────────────────────────────────────────
   aiPurple: '#4A1D96',
-  aiLight: '#7C3AED',
+  aiLight:  '#7C3AED',
   aiXLight: '#EDE9FE',
 
-  // Warm accent — farming, food, adventure
-  accent: '#E8773A',
-  accentLight: '#FFF0E6',
-  brown: '#8B5E3C',
+  // ── Warm accent — terracotta ─────────────────────────────────────────
+  accent:      '#BC6C25',
+  accentLight: '#FEF0E6',
+  brown:       '#7C5238',
 
-  // Backgrounds
-  background: '#F4F7F4',
-  card: '#FFFFFF',
-  cardAlt: '#F8FAF8',
-  inputBg: '#EEF2EE',
+  // ── Backgrounds — warm stone cream ───────────────────────────────────
+  background: '#F5EFE6',
+  card:       '#FFFFFF',
+  cardAlt:    '#F8F2EC',
+  inputBg:    '#EEE8E0',
 
-  // Text
-  textDark: '#0F1F0F',
-  textMedium: '#3A5040',
-  textLight: '#7A967A',
+  // ── Text — earthy tones ──────────────────────────────────────────────
+  textDark:   '#1A2E1A',
+  textMedium: '#3D5040',
+  textLight:  '#7A8878',
 
-  // Status
-  success: '#2D9D63',
-  warning: '#E8773A',
-  error: '#D94F4F',
+  // ── Status ───────────────────────────────────────────────────────────
+  success: '#2D8C55',
+  warning: '#D4814A',
+  error:   '#C94040',
 
-  // Misc
-  white: '#FFFFFF',
-  border: '#DDE8DD',
-  shadow: 'rgba(27, 94, 59, 0.12)',
-  overlay: 'rgba(0,0,0,0.42)',
-  divider: '#EAF0EA',
+  // ── Misc ─────────────────────────────────────────────────────────────
+  white:   '#FFFFFF',
+  border:  '#D4C8BA',
+  shadow:  'rgba(13, 27, 13, 0.12)',
+  overlay: 'rgba(10, 20, 10, 0.50)',
+  divider: '#E8DFD4',
 };

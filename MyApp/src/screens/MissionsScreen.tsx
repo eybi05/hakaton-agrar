@@ -142,7 +142,7 @@ export default function MissionsScreen({ navigation }: Props) {
 
         {/* ── Token hero card ───────────────────────────────────────────── */}
         <LinearGradient
-          colors={[COLORS.gold, '#E6A817', '#F5C518']}
+          colors={['#7C3810', '#A0522D', '#D4814A']}
           style={styles.heroCard}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         >
@@ -197,7 +197,7 @@ export default function MissionsScreen({ navigation }: Props) {
         {/* ── Pending reward banner ──────────────────────────────────────── */}
         {claimableBadges.length > 0 && (
           <LinearGradient
-            colors={['#4A1D96', '#7C3AED']}
+            colors={['#0D2B1F', '#1B4332', '#52796F']}
             style={styles.pendingBanner}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           >

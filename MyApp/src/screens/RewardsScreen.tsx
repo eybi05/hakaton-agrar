@@ -54,7 +54,7 @@ export default function RewardsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* ── Header ───────────────────────────────────────────────────── */}
-      <LinearGradient colors={['#4A1D96', '#7C3AED']} style={styles.header}>
+      <LinearGradient colors={['#0D2B1F', '#1B4332', '#52796F']} style={styles.header}>
         <View style={[styles.hBubble, { width: 160, height: 160, top: -50, right: -40 }]} />
 
         <View style={styles.headerTop}>
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardAlt,
     borderWidth: 1.5, borderColor: COLORS.border,
   },
-  catChipActive: { backgroundColor: '#4A1D96', borderColor: '#4A1D96' },
+  catChipActive: { backgroundColor: '#1B4332', borderColor: '#1B4332' },
   catChipIcon: { fontSize: 13 },
   catChipText: { fontSize: 12, fontWeight: '700', color: COLORS.textMedium },
   catChipTextActive: { color: COLORS.white },
