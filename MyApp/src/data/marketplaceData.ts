@@ -5,6 +5,7 @@ export interface MarketplaceItem {
   name: string;
   description: string;
   emoji: string;
+  logoText?: string;
   tokenCost: number;
   discount: string;
   gradient: [string, string];
@@ -19,6 +20,7 @@ export const MARKETPLACE_ITEMS: MarketplaceItem[] = [
     name: 'Uber Discount',
     description: 'Növbəti Uber sürüşünüzdə',
     emoji: '🚗',
+    logoText: 'Uber',
     tokenCost: 200,
     discount: '20%',
     gradient: ['#1A1A1A', '#3D3D3D'],

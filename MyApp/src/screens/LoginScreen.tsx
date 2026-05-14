@@ -10,7 +10,7 @@ import { useUser, UserRole } from '../context/UserContext';
 
 const { width, height } = Dimensions.get('window');
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: { navigation?: any }) {
   const { login } = useUser();
   const [role,     setRole]     = useState<UserRole>('tourist');
   const [username, setUsername] = useState('');
@@ -187,6 +187,15 @@ export default function LoginScreen() {
                 <Text style={styles.guestText}>Continue as Guest</Text>
               </TouchableOpacity>
 
+              {/* Register link */}
+              {navigation && (
+                <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.8} style={styles.registerLink}>
+                  <Text style={styles.registerLinkText}>
+                    New here?  <Text style={styles.registerLinkBold}>Create an account →</Text>
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               {/* Social */}
               <View style={styles.socialRow}>
                 <View style={styles.socialLine} />
@@ -275,4 +284,8 @@ const styles = StyleSheet.create({
   socialBtns: { flexDirection: 'row', justifyContent: 'center', gap: 14 },
   socialBtn:  { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.09)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
   socialG:    { fontSize: 16, fontWeight: '900', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' },
+
+  registerLink:     { alignItems: 'center', paddingVertical: 2 },
+  registerLinkText: { fontSize: 13, color: 'rgba(200,240,210,0.55)', fontWeight: '500' },
+  registerLinkBold: { color: 'rgba(200,240,210,0.9)', fontWeight: '800' },
 });

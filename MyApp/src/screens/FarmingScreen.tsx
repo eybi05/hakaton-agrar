@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../theme/colors';
 import TokenBar from '../components/TokenBar';
+import { useUser } from '../context/UserContext';
 
 const { width } = Dimensions.get('window');
 
@@ -103,6 +104,7 @@ type Section = 'search' | 'add';
 type Props = { navigation: any };
 
 export default function FarmingScreen({ navigation }: Props) {
+  const { role } = useUser();
   const [section,    setSection]    = useState<Section>('search');
   const [search,     setSearch]     = useState('');
   const [favorites,  setFavorites]  = useState<string[]>([]);
@@ -115,6 +117,7 @@ export default function FarmingScreen({ navigation }: Props) {
   const [newPrice,   setNewPrice]   = useState('');
   const [newDesc,    setNewDesc]    = useState('');
   const [newPhotos,  setNewPhotos]  = useState<string[]>([]);
+  const [aiTip,      setAiTip]      = useState('');
 
   const filteredFarms = farms.filter((f) =>
     !search ||
@@ -186,7 +189,7 @@ export default function FarmingScreen({ navigation }: Props) {
     setSection('search');
     // Reset form
     setNewName(''); setNewRegion('Sheki'); setNewType('Organic Farm');
-    setNewPrice(''); setNewDesc(''); setNewPhotos([]);
+    setNewPrice(''); setNewDesc(''); setNewPhotos([]); setAiTip('');
     Alert.alert('🌾 Farm Added!', `"${newFarm.name}" has been listed successfully.`);
   };
 
@@ -204,7 +207,7 @@ export default function FarmingScreen({ navigation }: Props) {
 
         {/* Section toggle */}
         <View style={styles.toggleRow}>
-          {(['search', 'add'] as Section[]).map((s) => (
+          {(['search', ...(role === 'farmer' ? ['add'] : [])] as Section[]).map((s) => (
             <TouchableOpacity
               key={s}
               onPress={() => setSection(s)}
@@ -286,10 +289,16 @@ export default function FarmingScreen({ navigation }: Props) {
                       )}
                     </View>
                   ) : (
-                    <LinearGradient colors={farm.gradient} style={styles.cardHero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                      <View style={styles.cardHeroDeco} />
-                      {/* Large centered emoji */}
-                      <Text style={styles.farmTypeEmoji}>{emoji}</Text>
+                    <View style={styles.cardHero}>
+                      <Image
+                        source={{ uri: `https://picsum.photos/seed/farm${farm.id}/700/400` }}
+                        style={StyleSheet.absoluteFillObject}
+                        resizeMode="cover"
+                      />
+                      <LinearGradient
+                        colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.62)']}
+                        style={StyleSheet.absoluteFillObject}
+                      />
                       <View style={styles.cardHeroContent}>
                         <View style={[styles.openBadge, { backgroundColor: farm.open ? 'rgba(46,204,113,0.25)' : 'rgba(231,76,60,0.25)' }]}>
                           <View style={[styles.openDot, { backgroundColor: farm.open ? '#2ECC71' : '#E74C3C' }]} />
@@ -309,7 +318,7 @@ export default function FarmingScreen({ navigation }: Props) {
                           <Text style={styles.reviewsText}>({farm.reviews})</Text>
                         </View>
                       </View>
-                    </LinearGradient>
+                    </View>
                   )}
 
                   {/* Card body */}
@@ -362,7 +371,7 @@ export default function FarmingScreen({ navigation }: Props) {
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* ADD SECTION                                                     */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {section === 'add' && (
+      {section === 'add' && role === 'farmer' && (
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -470,14 +479,47 @@ export default function FarmingScreen({ navigation }: Props) {
                 style={styles.randomBtn}
                 activeOpacity={0.75}
                 onPress={() => {
-                  const prices = ['20', '25', '30', '35', '40', '45', '50', '55', '60', '70', '80'];
-                  setNewPrice(prices[Math.floor(Math.random() * prices.length)]);
+                  const base: Record<string, number> = {
+                    'Organic Farm': 45, 'Fruit Orchard': 35, 'Pomegranate Farm': 50,
+                    'Nut Farm': 40, 'Tea Plantation': 28, 'Apple Orchard': 30,
+                    'Vineyard': 60, 'Ranch': 55,
+                  };
+                  const base_ = base[newType] ?? 40;
+                  const spread = [-10, -5, 0, 5, 10, 15];
+                  const suggested = base_ + spread[Math.floor(Math.random() * spread.length)];
+                  const price = Math.max(15, suggested);
+                  setNewPrice(String(price));
+
+                  const region = newRegion || 'your region';
+                  const tips = [
+                    `Based on ${INITIAL_FARMS.filter(f => f.type === newType).length} similar ${newType.toLowerCase()} listings in Azerbaijan, ₼${price}/person is competitive. Farms in ${region} typically range ₼${price - 8}–₼${price + 12} depending on included activities.`,
+                    `Market data for ${newType} experiences in ${region}: average visitor spends ₼${price - 5}–₼${price + 10}. Setting ₼${price} positions you in the sweet spot — attractive but profitable.`,
+                    `Visitors searching for ${newType.toLowerCase()} near ${region} are willing to pay ₼${price - 5}–₼${price + 15}. At ₼${price} you'll likely achieve 75–90% occupancy rate based on similar listings.`,
+                    `Seasonal demand for ${newType} peaks in spring and autumn. ₼${price} is optimal for year-round bookings in ${region}; consider raising to ₼${price + 10} during peak season.`,
+                  ];
+                  setAiTip(tips[Math.floor(Math.random() * tips.length)]);
                 }}
               >
-                <Text style={styles.randomBtnEmoji}>🎲</Text>
-                <Text style={styles.randomBtnText}>Random</Text>
+                <Text style={styles.randomBtnEmoji}>🤖</Text>
+                <Text style={styles.randomBtnText}>AI help</Text>
               </TouchableOpacity>
             </View>
+
+            {/* AI tip card */}
+            {aiTip ? (
+              <View style={styles.aiCard}>
+                <View style={styles.aiCardHeader}>
+                  <LinearGradient colors={[COLORS.primary, COLORS.primaryLight]} style={styles.aiCardIcon}>
+                    <Text style={{ fontSize: 13 }}>🤖</Text>
+                  </LinearGradient>
+                  <Text style={styles.aiCardTitle}>AI Pricing Analysis</Text>
+                  <TouchableOpacity onPress={() => setAiTip('')} activeOpacity={0.7}>
+                    <Ionicons name="close" size={16} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.aiCardText}>{aiTip}</Text>
+              </View>
+            ) : null}
 
             {/* Description */}
             <Text style={styles.fieldLabel}>Description</Text>
@@ -646,6 +688,20 @@ const styles = StyleSheet.create({
   },
   randomBtnEmoji: { fontSize: 18 },
   randomBtnText:  { fontSize: 10, fontWeight: '700', color: COLORS.primary },
+
+  aiCard: {
+    marginHorizontal: 20, marginBottom: 18,
+    backgroundColor: COLORS.primaryXLight, borderRadius: 16,
+    padding: 14, gap: 8,
+    borderWidth: 1, borderColor: COLORS.primary + '30',
+  },
+  aiCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  aiCardIcon: {
+    width: 28, height: 28, borderRadius: 8,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  aiCardTitle:  { flex: 1, fontSize: 13, fontWeight: '800', color: COLORS.primary },
+  aiCardText:   { fontSize: 13, color: COLORS.textMedium, lineHeight: 20 },
 
   fieldLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textDark, marginTop: 12, marginBottom: 6 },
   input:      {

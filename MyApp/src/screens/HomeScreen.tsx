@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  TextInput, Dimensions, Alert, Modal, Pressable,
+  TextInput, Dimensions, Alert, Modal, Pressable, ImageBackground, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import { useUser } from '../context/UserContext';
 import LangToggle from '../components/LangToggle';
 import { MARKETPLACE_ITEMS, MarketplaceItem } from '../data/marketplaceData';
 import CameraAnalyzer from '../components/CameraAnalyzer';
+import { usePurchases } from '../context/PurchaseContext';
 
 const { width } = Dimensions.get('window');
 const H_PAD = 20;
@@ -23,29 +24,22 @@ const AZ_REGION = { latitude: 40.1, longitude: 47.7, latitudeDelta: 4.2, longitu
 
 const TOURIST_PLANS = [
   {
-    id: '1', duration: '1 Day', price: '$3', perDay: '$3 / day', badge: null,
+    id: '1', duration: '1 Day', price: '$3', originalPrice: null as string | null, perDay: '$3 / day', badge: null,
     features: ['Full access', 'All categories'],
     gradient: ['#2C2C4E', '#4A4A78'] as [string, string], btnColor: '#2C2C4E',
   },
   {
-    id: '2', duration: '10 Days', price: '$25', perDay: '$2.5 / day', badge: 'Most Popular',
+    id: '2', duration: '10 Days', price: '$25', originalPrice: '$30' as string | null, perDay: '$2.5 / day', badge: 'Most Popular',
     features: ['Full access', 'All categories', 'Offline mode', 'Map view'],
     gradient: [COLORS.primaryDark, COLORS.primaryLight] as [string, string], btnColor: COLORS.primaryDark,
   },
   {
-    id: '3', duration: '30 Days', price: '$45', perDay: '$1.5 / day', badge: 'Best Value',
+    id: '3', duration: '30 Days', price: '$45', originalPrice: '$90' as string | null, perDay: '$1.5 / day', badge: 'Best Value',
     features: ['Full access', 'All categories', 'Offline mode', 'Map view', 'Priority support', 'Exclusive discounts'],
     gradient: ['#7B4A00', '#E8A020'] as [string, string], btnColor: '#7B4A00',
   },
 ];
 
-const FARMER_PLANS = [
-  {
-    id: '1', duration: '30 Days', price: '$15', perDay: '$0.50 / day', badge: 'Farmer Special',
-    features: ['List your farm', 'Reach tourists', 'Booking management', 'Analytics dashboard', 'Priority placement'],
-    gradient: [COLORS.primaryDark, COLORS.primaryLight] as [string, string], btnColor: COLORS.primaryDark,
-  },
-];
 
 const TOKEN_BENEFITS = [
   { emoji: '🚗', label: 'Uber',     disc: '20% off' },
@@ -63,6 +57,57 @@ const CATEGORIES = [
   { id: '6', label: 'Local Hotels',      icon: 'bed-outline'          },
   { id: '7', label: 'Traditional Food',  icon: 'restaurant-outline'   },
   { id: '8', label: 'Nature',            icon: 'partly-sunny-outline' },
+];
+
+const SUGGESTED_PLACES = [
+  {
+    id: 'sp1', name: 'Green Valley Farm', region: 'Sheki', type: 'Organic Farm',
+    rating: 4.9, reviews: 214,
+    desc: 'Stay in a real Azerbaijani farm surrounded by walnut forests.',
+    tag: 'Top Rated', tagColor: COLORS.primary,
+    gradient: [COLORS.primaryDark, COLORS.primaryLight] as [string, string],
+    image: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=700&h=420&fit=crop&q=80',
+  },
+  {
+    id: 'sp2', name: 'Sunrise Horse Ranch', region: 'Gabala', type: 'Horse Riding',
+    rating: 4.7, reviews: 138,
+    desc: 'Trail rides through Caucasus mountain meadows at sunrise.',
+    tag: 'Popular', tagColor: '#A67C52',
+    gradient: ['#6B3A1F', '#A67C52'] as [string, string],
+    image: 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=700&h=420&fit=crop&q=80',
+  },
+  {
+    id: 'sp3', name: 'Mountain Camp Site', region: 'Lahij', type: 'Camping',
+    rating: 4.8, reviews: 97,
+    desc: 'Sleep under the stars in ancient Lahij village highlands.',
+    tag: 'Adventure', tagColor: '#1A3A6E',
+    gradient: ['#1A3A6E', '#3B6CB0'] as [string, string],
+    image: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=700&h=420&fit=crop&q=80',
+  },
+  {
+    id: 'sp4', name: 'Pomegranate Estate', region: 'Goychay', type: 'Orchard Tour',
+    rating: 4.6, reviews: 83,
+    desc: 'Pick fresh pomegranates and taste award-winning local jam.',
+    tag: 'Seasonal', tagColor: '#C0392B',
+    gradient: ['#7B1A1A', '#C0392B'] as [string, string],
+    image: 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?w=700&h=420&fit=crop&q=80',
+  },
+  {
+    id: 'sp5', name: 'Sheki Silk Workshop', region: 'Sheki', type: 'Traditional Craft',
+    rating: 4.8, reviews: 162,
+    desc: 'Watch artisans weave kelaghayi silk scarves by hand.',
+    tag: 'Cultural', tagColor: '#7B4A00',
+    gradient: ['#7B4A00', '#E8A020'] as [string, string],
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=700&h=420&fit=crop&q=80',
+  },
+  {
+    id: 'sp6', name: 'Quba Eco Resort', region: 'Quba', type: 'Eco Stay',
+    rating: 4.7, reviews: 119,
+    desc: 'Wooden cabins nestled in apple orchards with mountain views.',
+    tag: 'New', tagColor: COLORS.success,
+    gradient: ['#1B4332', '#52796F'] as [string, string],
+    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=700&h=420&fit=crop&q=80',
+  },
 ];
 
 const MARKERS = [
@@ -86,17 +131,18 @@ type Props = { navigation: any };
 export default function HomeScreen({ navigation }: Props) {
   const [search, setSearch]             = useState('');
   const [selectedPlan, setSelectedPlan] = useState('2');
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [activePlan, setActivePlan]     = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(isLocal);
+  const [activePlan, setActivePlan]     = useState<string | null>(isLocal ? 'Local Access' : null);
   const [showSubModal, setShowSubModal] = useState(false);
   const [pendingItem, setPendingItem]   = useState<MarketplaceItem | null>(null);
 
   const { notifications }        = useBadges();
-  const { balance, spendTokens, lifetime } = useTokens();
+  const { balance, spendTokens, addTokens, lifetime } = useTokens();
   const { t }                    = useLanguage();
-  const { username, role }       = useUser();
+  const { username, role, isLocal, logout } = useUser();
+  const { purchases, addPurchase } = usePurchases();
 
-  const PLANS = role === 'farmer' ? FARMER_PLANS : TOURIST_PLANS;
+  const PLANS = TOURIST_PLANS;
 
   const level    = Math.floor(lifetime / 1000) + 1;
   const progress = (lifetime % 1000) / 1000;
@@ -115,6 +161,7 @@ export default function HomeScreen({ navigation }: Props) {
       Alert.alert('Not enough tokens', `${item.azName} requires 🪙${item.tokenCost}. You have 🪙${balance}.`, [{ text: 'OK' }]);
       return;
     }
+    addPurchase({ itemId: item.id, name: item.azName, emoji: item.emoji, discount: item.discount, tokenCost: item.tokenCost });
     Alert.alert('✅ Activated!', `${item.discount} discount for ${item.azName} added!`, [{ text: 'Great!' }]);
   };
 
@@ -123,7 +170,8 @@ export default function HomeScreen({ navigation }: Props) {
     if (!plan) return;
     setIsSubscribed(true); setActivePlan(plan.duration);
     setSelectedPlan(planId); setShowSubModal(false);
-    Alert.alert('🎉 Subscribed!', `${plan.duration} plan is now active.`, [{ text: 'Great!' }]);
+    addTokens(200);
+    Alert.alert('🎉 Subscribed!', `${plan.duration} plan is now active.\n+200 bonus tokens added to your wallet!`, [{ text: 'Great!' }]);
   };
 
   const avatarLetter = (username || 'G')[0].toUpperCase();
@@ -157,25 +205,27 @@ export default function HomeScreen({ navigation }: Props) {
           {/* Controls */}
           <View style={styles.headerRight}>
             <LangToggle variant="dark" />
-            <TouchableOpacity
-              style={styles.notifBtn}
-              onPress={() => navigation.navigate('Missions')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
-              {notifications > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>{notifications > 9 ? '9+' : notifications}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            {role !== 'farmer' && (
+              <TouchableOpacity
+                style={styles.notifBtn}
+                onPress={() => navigation.navigate('Missions')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+                {notifications > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>{notifications > 9 ? '9+' : notifications}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
         {/* ══════════════════════════════════════════════════════
-            TOKEN BALANCE CARD
+            TOKEN BALANCE CARD (tourists only)
         ══════════════════════════════════════════════════════ */}
-        <TouchableOpacity
+        {role !== 'farmer' && <TouchableOpacity
           style={styles.tokenCard}
           onPress={() => navigation.navigate('Missions')}
           activeOpacity={0.92}
@@ -219,7 +269,7 @@ export default function HomeScreen({ navigation }: Props) {
               <Text style={styles.earnText}>Earn</Text>
             </TouchableOpacity>
           </LinearGradient>
-        </TouchableOpacity>
+        </TouchableOpacity>}
 
         {/* ══════════════════════════════════════════════════════
             SEARCH BAR
@@ -245,6 +295,83 @@ export default function HomeScreen({ navigation }: Props) {
             <Ionicons name="options-outline" size={20} color={COLORS.white} />
           </TouchableOpacity>
         </View>
+
+        {/* ══════════════════════════════════════════════════════
+            SUGGESTED PLACES (tourists, not searching)
+        ══════════════════════════════════════════════════════ */}
+        {!isSearching && role !== 'farmer' && (
+          <>
+            <View style={styles.suggestHeader}>
+              <View>
+                <Text style={styles.suggestTitle}>Suggested for You</Text>
+                <Text style={styles.suggestSub}>Handpicked experiences in Azerbaijan</Text>
+              </View>
+              <TouchableOpacity activeOpacity={0.7}>
+                <Text style={styles.seeAll}>See all</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.suggestScroll}
+              decelerationRate="fast"
+              snapToInterval={width * 0.68 + 14}
+              snapToAlignment="start"
+            >
+              {SUGGESTED_PLACES.map((place) => (
+                <TouchableOpacity
+                  key={place.id}
+                  style={styles.suggestCard}
+                  activeOpacity={0.88}
+                  onPress={() => navigation.navigate('Category', { category: place.type })}
+                >
+                  {/* Card hero photo */}
+                  <ImageBackground
+                    source={{ uri: place.image }}
+                    style={styles.suggestCardHero}
+                    imageStyle={{ resizeMode: 'cover' }}
+                  >
+                    <LinearGradient
+                      colors={['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.52)']}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+
+                    {/* Tag pill */}
+                    <View style={styles.suggestTag}>
+                      <Text style={styles.suggestTagText}>{place.tag}</Text>
+                    </View>
+
+                    {/* Rating badge */}
+                    <View style={styles.suggestRating}>
+                      <Ionicons name="star" size={11} color="#FFD700" />
+                      <Text style={styles.suggestRatingText}>{place.rating}</Text>
+                    </View>
+                  </ImageBackground>
+
+                  {/* Card body */}
+                  <View style={styles.suggestBody}>
+                    <Text style={styles.suggestName} numberOfLines={1}>{place.name}</Text>
+                    <View style={styles.suggestMeta}>
+                      <Ionicons name="location-outline" size={12} color={COLORS.textLight} />
+                      <Text style={styles.suggestRegion}>{place.region}</Text>
+                      <Text style={styles.suggestDot}>·</Text>
+                      <Text style={styles.suggestType}>{place.type}</Text>
+                    </View>
+                    <Text style={styles.suggestDesc} numberOfLines={2}>{place.desc}</Text>
+                    <View style={styles.suggestFooter}>
+                      <Text style={styles.suggestReviews}>{place.reviews} reviews</Text>
+                      <View style={styles.suggestExploreBtn}>
+                        <Text style={styles.suggestExploreBtnText}>Explore</Text>
+                        <Ionicons name="arrow-forward" size={12} color={COLORS.primary} />
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         {/* ══════════════════════════════════════════════════════
             SEARCH RESULTS
@@ -287,7 +414,11 @@ export default function HomeScreen({ navigation }: Props) {
                 {matchedMarket.map((item) => (
                   <TouchableOpacity key={item.id} style={styles.searchRow} onPress={() => handleBuy(item)} activeOpacity={0.75}>
                     <View style={[styles.searchRowIcon, { backgroundColor: item.gradient[0] + '20' }]}>
-                      <Text style={{ fontSize: 18 }}>{item.emoji}</Text>
+                      {item.logoText ? (
+                        <Text style={styles.searchLogoText}>{item.logoText}</Text>
+                      ) : (
+                        <Text style={{ fontSize: 18 }}>{item.emoji}</Text>
+                      )}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.searchRowLabel}>{item.azName}</Text>
@@ -306,6 +437,9 @@ export default function HomeScreen({ navigation }: Props) {
         ══════════════════════════════════════════════════════ */}
         {!isSearching && (
           <>
+
+            {/* ── Benefits Banner + Discounts + Plans (tourists only) ── */}
+            {role !== 'farmer' && (<>
 
             {/* ── Benefits Banner ─────────────────────────────── */}
             <View style={styles.sectionHeader}>
@@ -387,7 +521,13 @@ export default function HomeScreen({ navigation }: Props) {
                     )}
 
                     <View>
-                      <Text style={styles.discountEmoji}>{item.emoji}</Text>
+                      {item.logoText ? (
+                        <View style={styles.discountLogoWrap}>
+                          <Text style={styles.discountLogoText}>{item.logoText}</Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.discountEmoji}>{item.emoji}</Text>
+                      )}
                       <Text style={styles.discountPct}>{item.discount}</Text>
                       <Text style={styles.discountOff}>OFF</Text>
                     </View>
@@ -446,20 +586,16 @@ export default function HomeScreen({ navigation }: Props) {
                         </View>
                       ) : <View style={{ height: 28 }} />}
 
-                      <Text style={styles.planPrice}>{plan.price}</Text>
+                      <View style={styles.planPriceRow}>
+                        {plan.originalPrice && (
+                          <Text style={styles.planOriginalPrice}>{plan.originalPrice}</Text>
+                        )}
+                        <Text style={styles.planPrice}>{plan.price}</Text>
+                      </View>
                       <Text style={styles.planPerDay}>{plan.perDay}</Text>
                       <Text style={styles.planDuration}>{plan.duration}</Text>
 
-                      <View style={styles.planDivider} />
-
-                      <View style={styles.planFeatures}>
-                        {plan.features.map((f) => (
-                          <View key={f} style={styles.planFeatureRow}>
-                            <Ionicons name="checkmark-circle" size={14} color="rgba(255,255,255,0.85)" />
-                            <Text style={styles.planFeatureText}>{f}</Text>
-                          </View>
-                        ))}
-                      </View>
+                      <View style={{ flex: 1 }} />
 
                       <TouchableOpacity
                         style={[styles.planBtn, isPurchased && styles.planBtnActive]}
@@ -476,6 +612,91 @@ export default function HomeScreen({ navigation }: Props) {
                 );
               })}
             </ScrollView>
+
+            </>)}
+
+            {/* ── My Profile ───────────────────────────────────── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>My Profile</Text>
+            </View>
+
+            <View style={styles.profileCard}>
+              {/* Top row */}
+              <View style={styles.profileTop}>
+                <LinearGradient colors={[COLORS.primary, COLORS.primaryLight]} style={styles.profileAvatar}>
+                  <Text style={styles.profileAvatarText}>{avatarLetter}</Text>
+                </LinearGradient>
+                <View style={styles.profileInfo}>
+                  <Text style={styles.profileName}>{username || 'Guest'}</Text>
+                  <Text style={styles.profileRole}>{role === 'farmer' ? '👨‍🌾 Farmer' : '🧳 Tourist'}</Text>
+                  {isSubscribed ? (
+                    <View style={styles.profileSubBadge}>
+                      <Ionicons name="checkmark-circle" size={12} color={COLORS.success} />
+                      <Text style={styles.profileSubBadgeText}>{activePlan} plan</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity onPress={() => setShowSubModal(true)} activeOpacity={0.8}>
+                      <Text style={styles.profileSubLink}>Subscribe →</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={styles.profileTokenCol}>
+                  <Text style={styles.profileTokenEmoji}>🪙</Text>
+                  <Text style={styles.profileTokenCount}>{balance.toLocaleString()}</Text>
+                  <Text style={styles.profileTokenLabel}>Lv.{Math.floor(lifetime / 1000) + 1}</Text>
+                </View>
+              </View>
+
+              {/* Divider */}
+              <View style={styles.profileDivider} />
+
+              {/* Purchases */}
+              <View style={styles.purchasesHeader}>
+                <Text style={styles.purchasesTitle}>Active Discounts</Text>
+                <View style={styles.purchaseCount}>
+                  <Text style={styles.purchaseCountText}>{purchases.length}</Text>
+                </View>
+              </View>
+
+              {purchases.length === 0 ? (
+                <View style={styles.noPurchases}>
+                  <Ionicons name="receipt-outline" size={28} color={COLORS.border} />
+                  <Text style={styles.noPurchasesText}>No purchases yet</Text>
+                  <Text style={styles.noPurchasesSub}>Use tokens to activate discounts below</Text>
+                </View>
+              ) : (
+                <View style={styles.purchaseList}>
+                  {purchases.map((p) => (
+                    <View key={p.id} style={styles.purchaseRow}>
+                      <View style={styles.purchaseEmojiWrap}>
+                        <Text style={styles.purchaseEmoji}>{p.emoji}</Text>
+                      </View>
+                      <View style={styles.purchaseInfo}>
+                        <Text style={styles.purchaseName}>{p.name}</Text>
+                        <Text style={styles.purchaseMeta}>{p.discount} off · 🪙 {p.tokenCost}</Text>
+                      </View>
+                      <Text style={styles.purchaseDate}>
+                        {new Date(p.purchasedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Logout */}
+              <View style={styles.profileDivider} />
+              <TouchableOpacity
+                style={styles.logoutBtn}
+                onPress={() => Alert.alert('Log out', 'Are you sure you want to log out?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Log out', style: 'destructive', onPress: logout },
+                ])}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
+                <Text style={styles.logoutText}>Log out</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* ── Browse Categories ────────────────────────────── */}
             <View style={styles.sectionHeader}>
@@ -508,39 +729,65 @@ export default function HomeScreen({ navigation }: Props) {
             {/* ── Map ─────────────────────────────────────────── */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Explore on Map</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('FullMap')}>
-                <Text style={styles.seeAll}>Full map ↗</Text>
-              </TouchableOpacity>
+              {(role === 'farmer' || isSubscribed) && (
+                <TouchableOpacity onPress={() => navigation.navigate('FullMap')}>
+                  <Text style={styles.seeAll}>Full map ↗</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
-            <View style={styles.mapWrap}>
-              <MapView
-                style={styles.map}
-                provider={PROVIDER_DEFAULT}
-                initialRegion={AZ_REGION}
-                scrollEnabled={false}
-                zoomEnabled={false}
-                showsUserLocation
-                showsMyLocationButton={false}
-                minZoomLevel={6}
-                maxZoomLevel={14}
-              >
-                {MARKERS.map((m) => (
-                  <Marker key={m.id} coordinate={{ latitude: m.lat, longitude: m.lng }} title={m.title} description={m.region} pinColor={m.color} />
-                ))}
-              </MapView>
+            {(role === 'farmer' || isSubscribed) ? (
+              <View style={styles.mapWrap}>
+                <MapView
+                  style={styles.map}
+                  provider={PROVIDER_DEFAULT}
+                  initialRegion={AZ_REGION}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                  showsUserLocation
+                  showsMyLocationButton={false}
+                  minZoomLevel={6}
+                  maxZoomLevel={14}
+                >
+                  {MARKERS.map((m) => (
+                    <Marker key={m.id} coordinate={{ latitude: m.lat, longitude: m.lng }} title={m.title} description={m.region} pinColor={m.color} />
+                  ))}
+                </MapView>
+                <TouchableOpacity
+                  style={styles.mapOverlayBtn}
+                  onPress={() => navigation.navigate('FullMap')}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.mapLegend}>
+                    <Ionicons name="location" size={14} color={COLORS.primary} />
+                    <Text style={styles.mapLegendText}>{MARKERS.length} nearby places</Text>
+                    <Ionicons name="chevron-forward" size={14} color={COLORS.textLight} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+            ) : (
               <TouchableOpacity
-                style={styles.mapOverlayBtn}
-                onPress={() => navigation.navigate('FullMap')}
-                activeOpacity={0.85}
+                style={styles.mapLocked}
+                onPress={() => setShowSubModal(true)}
+                activeOpacity={0.88}
               >
-                <View style={styles.mapLegend}>
-                  <Ionicons name="location" size={14} color={COLORS.primary} />
-                  <Text style={styles.mapLegendText}>{MARKERS.length} nearby places</Text>
-                  <Ionicons name="chevron-forward" size={14} color={COLORS.textLight} />
-                </View>
+                <LinearGradient colors={[COLORS.primaryXLight, COLORS.cardAlt]} style={styles.mapLockedGrad}>
+                  <View style={styles.mapLockedIconWrap}>
+                    <Ionicons name="map-outline" size={36} color={COLORS.primary} />
+                    <View style={styles.mapLockedBadge}>
+                      <Ionicons name="lock-closed" size={12} color={COLORS.white} />
+                    </View>
+                  </View>
+                  <Text style={styles.mapLockedTitle}>Subscribe to Explore the Map</Text>
+                  <Text style={styles.mapLockedSub}>
+                    Discover {MARKERS.length} farms, camps, and hidden gems across Azerbaijan
+                  </Text>
+                  <View style={styles.mapLockedBtn}>
+                    <Text style={styles.mapLockedBtnText}>Subscribe Now →</Text>
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
-            </View>
+            )}
 
           </>
         )}
@@ -710,6 +957,57 @@ const styles = StyleSheet.create({
   buyChip:         { backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 12 },
   buyChipText:     { fontSize: 12, fontWeight: '700', color: COLORS.white },
 
+  // ── Suggested Places ────────────────────────────────────────────────────
+  suggestHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+    paddingHorizontal: H_PAD, marginTop: 28, marginBottom: 14,
+  },
+  suggestTitle:  { fontSize: 20, fontWeight: '800', color: COLORS.textDark, letterSpacing: -0.3 },
+  suggestSub:    { fontSize: 13, color: COLORS.textLight, marginTop: 2 },
+
+  suggestScroll: { paddingHorizontal: H_PAD, paddingBottom: 8, gap: 14 },
+
+  suggestCard: {
+    width: width * 0.66,
+    backgroundColor: COLORS.card, borderRadius: 22,
+    overflow: 'hidden',
+    shadowColor: 'rgba(0,0,0,0.14)', shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 1, shadowRadius: 14, elevation: 6,
+  },
+  suggestCardHero: {
+    height: 148, padding: 14,
+    justifyContent: 'space-between', alignItems: 'flex-start',
+    overflow: 'hidden',
+  },
+  suggestTag: {
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 20, alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,0,0,0.38)',
+  },
+  suggestTagText:   { fontSize: 11, fontWeight: '700', color: COLORS.white },
+  suggestRating: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.28)', borderRadius: 20,
+    paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-end',
+  },
+  suggestRatingText: { fontSize: 12, fontWeight: '800', color: COLORS.white },
+
+  suggestBody:    { padding: 14, gap: 6 },
+  suggestName:    { fontSize: 16, fontWeight: '800', color: COLORS.textDark, letterSpacing: -0.2 },
+  suggestMeta:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  suggestRegion:  { fontSize: 12, color: COLORS.textLight, fontWeight: '500' },
+  suggestDot:     { fontSize: 12, color: COLORS.border },
+  suggestType:    { fontSize: 12, color: COLORS.textLight, fontWeight: '500' },
+  suggestDesc:    { fontSize: 13, color: COLORS.textMedium, lineHeight: 18 },
+  suggestFooter:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
+  suggestReviews: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
+  suggestExploreBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: COLORS.primaryXLight, borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  suggestExploreBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+
   // ── Section Header ──────────────────────────────────────────────────────
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
@@ -765,6 +1063,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   discountEmoji:  { fontSize: 36, marginBottom: 6 },
+  discountLogoWrap: {
+    backgroundColor: COLORS.white, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 7,
+    alignSelf: 'flex-start', marginBottom: 8,
+  },
+  discountLogoText: {
+    fontSize: 22, fontWeight: '900', color: '#000000',
+    letterSpacing: -0.5,
+  },
+  searchLogoText: {
+    fontSize: 12, fontWeight: '900', color: COLORS.white,
+    letterSpacing: -0.3,
+  },
   discountPct:    { fontSize: 38, fontWeight: '900', color: COLORS.white, letterSpacing: -1, lineHeight: 42 },
   discountOff:    { fontSize: 14, fontWeight: '700', color: 'rgba(255,255,255,0.7)', marginTop: -2, letterSpacing: 2 },
   discountName:   { fontSize: 15, fontWeight: '700', color: COLORS.white, marginBottom: 4 },
@@ -794,7 +1105,12 @@ const styles = StyleSheet.create({
   },
   planGrad:      { flex: 1, borderRadius: 24, padding: 22, overflow: 'hidden', gap: 12, minHeight: 280 },
   planBadge:     { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
-  planBadgeText: { fontSize: 11, color: COLORS.white, fontWeight: '700' },
+  planBadgeText:     { fontSize: 11, color: COLORS.white, fontWeight: '700' },
+  planPriceRow:      { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  planOriginalPrice: {
+    fontSize: 22, fontWeight: '700', color: 'rgba(255,255,255,0.45)',
+    textDecorationLine: 'line-through', marginBottom: 4,
+  },
   planPrice:     { fontSize: 42, fontWeight: '900', color: COLORS.white, letterSpacing: -1.5 },
   planPerDay:    { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: -10 },
   planDuration:  { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.9)' },
@@ -830,6 +1146,31 @@ const styles = StyleSheet.create({
   catLabel: { fontSize: 10.5, fontWeight: '600', color: COLORS.textMedium, textAlign: 'center', lineHeight: 14 },
 
   // ── Map ─────────────────────────────────────────────────────────────────
+  mapLocked: {
+    marginHorizontal: H_PAD, borderRadius: 24, overflow: 'hidden',
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1, shadowRadius: 12, elevation: 4,
+  },
+  mapLockedGrad: {
+    paddingVertical: 36, paddingHorizontal: 24,
+    alignItems: 'center', gap: 12,
+    borderWidth: 1.5, borderColor: COLORS.primaryXLight, borderRadius: 24,
+  },
+  mapLockedIconWrap: { position: 'relative', marginBottom: 4 },
+  mapLockedBadge: {
+    position: 'absolute', bottom: -4, right: -4,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: COLORS.card,
+  },
+  mapLockedTitle: { fontSize: 18, fontWeight: '800', color: COLORS.textDark, textAlign: 'center' },
+  mapLockedSub:   { fontSize: 13, color: COLORS.textLight, textAlign: 'center', lineHeight: 20 },
+  mapLockedBtn: {
+    marginTop: 4, backgroundColor: COLORS.primary,
+    borderRadius: 50, paddingHorizontal: 28, paddingVertical: 13,
+  },
+  mapLockedBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.white },
+
   mapWrap: {
     marginHorizontal: H_PAD, borderRadius: 24, overflow: 'hidden', height: 260,
     shadowColor: 'rgba(0,0,0,0.12)', shadowOffset: { width: 0, height: 5 },
@@ -846,6 +1187,72 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   mapLegendText: { flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.textDark },
+
+  // ── Profile Section ─────────────────────────────────────────────────────
+  profileCard: {
+    marginHorizontal: H_PAD,
+    backgroundColor: COLORS.card, borderRadius: 22,
+    padding: 20,
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1, shadowRadius: 10, elevation: 4,
+    borderWidth: 1, borderColor: COLORS.divider,
+  },
+  profileTop:        { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  profileAvatar: {
+    width: 52, height: 52, borderRadius: 16,
+    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+  },
+  profileAvatarText: { fontSize: 22, fontWeight: '900', color: COLORS.white },
+  profileInfo:       { flex: 1, gap: 4 },
+  profileName:       { fontSize: 17, fontWeight: '800', color: COLORS.textDark },
+  profileRole:       { fontSize: 13, color: COLORS.textLight, fontWeight: '500' },
+  profileSubBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: COLORS.primaryXLight, alignSelf: 'flex-start',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, marginTop: 2,
+  },
+  profileSubBadgeText: { fontSize: 11, color: COLORS.success, fontWeight: '700' },
+  profileSubLink:      { fontSize: 12, color: COLORS.primaryLight, fontWeight: '700', marginTop: 2 },
+  profileTokenCol:   { alignItems: 'center', gap: 2, flexShrink: 0 },
+  profileTokenEmoji: { fontSize: 22 },
+  profileTokenCount: { fontSize: 18, fontWeight: '900', color: COLORS.gold },
+  profileTokenLabel: { fontSize: 11, color: COLORS.textLight, fontWeight: '600' },
+
+  profileDivider:   { height: 1, backgroundColor: COLORS.divider, marginVertical: 16 },
+
+  purchasesHeader:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  purchasesTitle:   { fontSize: 15, fontWeight: '800', color: COLORS.textDark },
+  purchaseCount: {
+    minWidth: 22, height: 22, borderRadius: 11,
+    backgroundColor: COLORS.primaryXLight, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6,
+  },
+  purchaseCountText: { fontSize: 11, fontWeight: '800', color: COLORS.primary },
+
+  noPurchases:     { alignItems: 'center', paddingVertical: 20, gap: 6 },
+  noPurchasesText: { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
+  noPurchasesSub:  { fontSize: 12, color: COLORS.textLight, textAlign: 'center' },
+
+  purchaseList:    { gap: 10 },
+  purchaseRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: COLORS.background, borderRadius: 14, padding: 12,
+  },
+  purchaseEmojiWrap: {
+    width: 38, height: 38, borderRadius: 12,
+    backgroundColor: COLORS.goldXLight, justifyContent: 'center', alignItems: 'center',
+  },
+  purchaseEmoji:  { fontSize: 20 },
+  purchaseInfo:   { flex: 1, gap: 2 },
+  purchaseName:   { fontSize: 13, fontWeight: '700', color: COLORS.textDark },
+  purchaseMeta:   { fontSize: 11, color: COLORS.textLight },
+  purchaseDate:   { fontSize: 11, color: COLORS.textLight, fontWeight: '600' },
+
+  logoutBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#FFF0F0', borderRadius: 14, paddingVertical: 13,
+    borderWidth: 1, borderColor: '#FFCCCC',
+  },
+  logoutText: { fontSize: 15, fontWeight: '700', color: COLORS.error },
 
   // ── Subscription Modal ──────────────────────────────────────────────────
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },

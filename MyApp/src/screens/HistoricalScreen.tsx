@@ -15,7 +15,6 @@ import { getHistoricalPhotos, hasRealPhoto } from '../data/historicalImages';
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;
 
-const FILTERS = ['All', 'UNESCO', 'Castles', 'Palaces', 'Ancient', 'Temples', 'Nature', 'Cultural'];
 
 export type HistoricalPlace = {
   id: string;
@@ -256,17 +255,14 @@ const PLACES: HistoricalPlace[] = [
 type Props = { navigation: any };
 
 export default function HistoricalScreen({ navigation }: Props) {
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [search, setSearch]             = useState('');
-  const { t }                           = useLanguage();
+  const [search, setSearch] = useState('');
+  const { t }               = useLanguage();
 
-  const filtered = PLACES.filter((p) => {
-    const matchFilter = activeFilter === 'All' || p.tag === activeFilter;
-    const matchSearch  =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.location.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
+  const filtered = PLACES.filter((p) =>
+    !search ||
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.location.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -298,25 +294,6 @@ export default function HistoricalScreen({ navigation }: Props) {
       {/* ── Token bar ───────────────────────────────────────────────────── */}
       <TokenBar />
 
-      {/* ── Filters ─────────────────────────────────────────────────────── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterScroll}
-        style={styles.filterBar}
-        keyboardShouldPersistTaps="handled"
-      >
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f}
-            onPress={() => setActiveFilter(f)}
-            style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
-            activeOpacity={0.75}
-          >
-            <Text style={[styles.filterChipText, activeFilter === f && styles.filterChipTextActive]}>{f}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
 
       {/* ── Grid ────────────────────────────────────────────────────────── */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid} keyboardShouldPersistTaps="handled">
@@ -387,12 +364,6 @@ const styles = StyleSheet.create({
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 12, paddingHorizontal: 14, height: 46 },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textDark },
 
-  filterBar: { backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.divider, paddingVertical: 10 },
-  filterScroll: { paddingHorizontal: 14, alignItems: 'center', gap: 8 },
-  filterChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 22, backgroundColor: COLORS.historicalXLight, borderWidth: 1.5, borderColor: COLORS.historicalLight + '50' },
-  filterChipActive: { backgroundColor: COLORS.historical, borderColor: COLORS.historical, shadowColor: COLORS.historical, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.35, shadowRadius: 6, elevation: 4 },
-  filterChipText: { fontSize: 13, fontWeight: '700', color: COLORS.historical },
-  filterChipTextActive: { color: COLORS.white },
 
   grid: { paddingHorizontal: 16, paddingTop: 14 },
   resultCount: { fontSize: 13, color: COLORS.textLight, marginBottom: 12, fontWeight: '500' },

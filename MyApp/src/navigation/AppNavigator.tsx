@@ -6,10 +6,12 @@ import { View, StyleSheet, Platform, Text } from 'react-native';
 import HomeStack from './HomeStack';
 import HistoricalStack from './HistoricalStack';
 import FarmingStack from './FarmingStack';
+import MarketStack from './MarketStack';
 import MissionsStack from './MissionsStack';
 import ChatbotScreen from '../screens/ChatbotScreen';
 import { COLORS } from '../theme/colors';
 import { useLanguage } from '../context/LanguageContext';
+import { useUser } from '../context/UserContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -17,6 +19,7 @@ const TABS = [
   { name: 'Home',       component: HomeStack,       icon: 'home',        label: '🏡', navKey: 'home'       },
   { name: 'Historical', component: HistoricalStack, icon: 'business',    label: '🏛️', navKey: 'historical' },
   { name: 'Farming',    component: FarmingStack,    icon: 'leaf',        label: '🌾', navKey: 'farming'    },
+  { name: 'Market',     component: MarketStack,     icon: 'storefront',  label: '🛒', navKey: 'market'     },
   { name: 'Missions',   component: MissionsStack,   icon: 'trophy',      label: '🎯', navKey: 'missions'   },
   { name: 'AgroBot',    component: ChatbotScreen,   icon: 'chatbubbles', label: '🤖', navKey: 'chatbot'    },
 ] as const;
@@ -25,12 +28,18 @@ const ACTIVE_COLORS: Record<string, string> = {
   Home:       '#1B4332',
   Historical: '#1A3A6E',
   Farming:    '#1B4332',
+  Market:     '#BC6C25',
   Missions:   '#A0522D',
   AgroBot:    '#4A1D96',
 };
 
 export default function AppNavigator() {
   const { t } = useLanguage();
+  const { role } = useUser();
+
+  const visibleTabs = TABS.filter(
+    (tab) => !(role === 'farmer' && tab.name === 'Missions'),
+  );
 
   return (
     <Tab.Navigator
@@ -63,7 +72,7 @@ export default function AppNavigator() {
         };
       }}
     >
-      {TABS.map((tab) => (
+      {visibleTabs.map((tab) => (
         <Tab.Screen
           key={tab.name}
           name={tab.name}

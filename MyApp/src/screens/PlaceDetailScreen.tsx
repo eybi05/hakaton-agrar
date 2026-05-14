@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Dimensions, Image,
+  TouchableOpacity, Dimensions, Image, ImageBackground,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -109,9 +109,11 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
 
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
-        <LinearGradient colors={place.gradient} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <View style={styles.deco1} />
-          <View style={styles.deco2} />
+        <ImageBackground source={photos[0]} style={styles.hero} imageStyle={{ resizeMode: 'cover' }}>
+          <LinearGradient
+            colors={['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.72)']}
+            style={StyleSheet.absoluteFillObject}
+          />
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={20} color={COLORS.white} />
           </TouchableOpacity>
@@ -130,7 +132,7 @@ export default function PlaceDetailScreen({ route, navigation }: Props) {
             </View>
             <Text style={styles.heroEra}>{place.era}</Text>
           </View>
-        </LinearGradient>
+        </ImageBackground>
 
         <View style={styles.body}>
 
