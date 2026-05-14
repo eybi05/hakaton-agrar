@@ -100,9 +100,6 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
           <Text style={styles.slogan}>Nature's smile in every mile</Text>
         </View>
 
-        {/* Spacer — shows the landscape */}
-        <View style={{ flex: 1 }} />
-
         {/* Glass panel — in normal flow so KAV works */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -236,23 +233,23 @@ const styles = StyleSheet.create({
   tree:         { position: 'absolute', width: 18, height: 32, backgroundColor: '#1A3A10', borderTopLeftRadius: 10, borderTopRightRadius: 10, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 },
 
   // Flex overlay
-  overlay: { flex: 1 },
+  overlay: { flex: 1, justifyContent: 'center', gap: 28, paddingHorizontal: 16, paddingVertical: 24 },
 
   // Logo
-  logoArea: { alignItems: 'center', paddingTop: 6, gap: 3 },
-  logoImg:  { width: 44, height: 44, borderRadius: 10, marginBottom: 2 },
-  appName:  { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: 6, textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
-  slogan:   { fontSize: 11, color: 'rgba(255,255,255,0.72)', fontWeight: '600', letterSpacing: 0.5, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  logoArea: { alignItems: 'center', gap: 5 },
+  logoImg:  { width: 64, height: 64, borderRadius: 16, marginBottom: 2 },
+  appName:  { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: 6, textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+  slogan:   { fontSize: 12, color: 'rgba(255,255,255,0.72)', fontWeight: '600', letterSpacing: 0.5, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
 
   // Glass panel
   glassPanel: {
-    backgroundColor: 'rgba(10,28,10,0.80)',
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    borderTopWidth: 1, borderLeftWidth: 0.5, borderRightWidth: 0.5,
+    backgroundColor: 'rgba(10,28,10,0.82)',
+    borderRadius: 28,
+    borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.13)',
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 18,
+    paddingBottom: 22,
     gap: 11,
   },
   handle: { width: 38, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.22)', alignSelf: 'center', marginBottom: 2 },
