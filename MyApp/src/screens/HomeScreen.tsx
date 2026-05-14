@@ -133,13 +133,14 @@ export default function HomeScreen({ navigation }: Props) {
   const [selectedPlan, setSelectedPlan] = useState('2');
   const [isSubscribed, setIsSubscribed] = useState(isLocal);
   const [activePlan, setActivePlan]     = useState<string | null>(isLocal ? 'Local Access' : null);
+  const [passportMode, setPassportMode] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   const [pendingItem, setPendingItem]   = useState<MarketplaceItem | null>(null);
 
   const { notifications }        = useBadges();
   const { balance, spendTokens, addTokens, lifetime } = useTokens();
   const { t }                    = useLanguage();
-  const { username, role, isLocal, logout } = useUser();
+  const { username, role, isLocal, country, logout } = useUser();
   const { purchases, addPurchase } = usePurchases();
 
   const PLANS = TOURIST_PLANS;
@@ -621,7 +622,7 @@ export default function HomeScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.profileCard}>
-              {/* Top row */}
+              {/* ── Header row (always visible) ── */}
               <View style={styles.profileTop}>
                 <LinearGradient colors={[COLORS.primary, COLORS.primaryLight]} style={styles.profileAvatar}>
                   <Text style={styles.profileAvatarText}>{avatarLetter}</Text>
@@ -640,6 +641,25 @@ export default function HomeScreen({ navigation }: Props) {
                     </TouchableOpacity>
                   )}
                 </View>
+
+                {/* ── Passport sticker toggle ── */}
+                <TouchableOpacity
+                  style={[styles.passportSticker, passportMode && styles.passportStickerOn]}
+                  onPress={() => setPassportMode(v => !v)}
+                  activeOpacity={0.82}
+                >
+                  <LinearGradient
+                    colors={passportMode ? ['#7B1A1A', '#C0392B'] : [COLORS.primaryDark, COLORS.primary]}
+                    style={styles.passportStickerGrad}
+                  >
+                    <View style={styles.passportStickerInner}>
+                      <Text style={styles.passportStickerEmoji}>🌿</Text>
+                      <Text style={styles.passportStickerTop}>AGRO</Text>
+                      <Text style={styles.passportStickerBot}>PASSPORT</Text>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+
                 <View style={styles.profileTokenCol}>
                   <Text style={styles.profileTokenEmoji}>🪙</Text>
                   <Text style={styles.profileTokenCount}>{balance.toLocaleString()}</Text>
@@ -647,43 +667,181 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
               </View>
 
-              {/* Divider */}
               <View style={styles.profileDivider} />
 
-              {/* Purchases */}
-              <View style={styles.purchasesHeader}>
-                <Text style={styles.purchasesTitle}>Active Discounts</Text>
-                <View style={styles.purchaseCount}>
-                  <Text style={styles.purchaseCountText}>{purchases.length}</Text>
+              {/* ══════════════════════════════════════════
+                  VIEW A — Active Discounts (default)
+              ══════════════════════════════════════════ */}
+              {!passportMode && (<>
+                <View style={styles.purchasesHeader}>
+                  <Text style={styles.purchasesTitle}>Active Discounts</Text>
+                  <View style={styles.purchaseCount}>
+                    <Text style={styles.purchaseCountText}>{purchases.length}</Text>
+                  </View>
                 </View>
-              </View>
 
-              {purchases.length === 0 ? (
-                <View style={styles.noPurchases}>
-                  <Ionicons name="receipt-outline" size={28} color={COLORS.border} />
-                  <Text style={styles.noPurchasesText}>No purchases yet</Text>
-                  <Text style={styles.noPurchasesSub}>Use tokens to activate discounts below</Text>
-                </View>
-              ) : (
-                <View style={styles.purchaseList}>
-                  {purchases.map((p) => (
-                    <View key={p.id} style={styles.purchaseRow}>
-                      <View style={styles.purchaseEmojiWrap}>
-                        <Text style={styles.purchaseEmoji}>{p.emoji}</Text>
+                {purchases.length === 0 ? (
+                  <View style={styles.noPurchases}>
+                    <Ionicons name="receipt-outline" size={28} color={COLORS.border} />
+                    <Text style={styles.noPurchasesText}>No purchases yet</Text>
+                    <Text style={styles.noPurchasesSub}>Use tokens to activate discounts below</Text>
+                  </View>
+                ) : (
+                  <View style={styles.purchaseList}>
+                    {purchases.map((p) => (
+                      <View key={p.id} style={styles.purchaseRow}>
+                        <View style={styles.purchaseEmojiWrap}>
+                          <Text style={styles.purchaseEmoji}>{p.emoji}</Text>
+                        </View>
+                        <View style={styles.purchaseInfo}>
+                          <Text style={styles.purchaseName}>{p.name}</Text>
+                          <Text style={styles.purchaseMeta}>{p.discount} off · 🪙 {p.tokenCost}</Text>
+                        </View>
+                        <Text style={styles.purchaseDate}>
+                          {new Date(p.purchasedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                        </Text>
                       </View>
-                      <View style={styles.purchaseInfo}>
-                        <Text style={styles.purchaseName}>{p.name}</Text>
-                        <Text style={styles.purchaseMeta}>{p.discount} off · 🪙 {p.tokenCost}</Text>
+                    ))}
+                  </View>
+                )}
+              </>)}
+
+              {/* ══════════════════════════════════════════
+                  VIEW B — Digital Passport
+              ══════════════════════════════════════════ */}
+              {passportMode && (() => {
+                const parts        = (username || 'Guest').split(' ');
+                const firstName    = parts[0];
+                const surname      = parts.length > 1 ? parts.slice(1).join(' ') : null;
+                const countryLabel = country || (isLocal ? 'Azerbaijan' : '—');
+                const ppStamps = [
+                  { id: '1', emoji: '🍎', topText: 'POMEGRANATE', botText: 'FESTIVAL', earned: true,                    color: '#C0392B' },
+                  { id: '2', emoji: '🍇', topText: 'GRAPE',       botText: 'TOUR',     earned: purchases.length > 0,    color: '#6B3FA0' },
+                  { id: '3', emoji: '🍃', topText: 'NATURE',      botText: 'WALK',     earned: lifetime > 200,          color: COLORS.primary },
+                  { id: '4', emoji: '🚜', topText: 'FARM',        botText: 'LIFE',     earned: isSubscribed,            color: '#A0522D' },
+                ];
+                const earned = ppStamps.filter(s => s.earned).length;
+                return (
+                  <>
+                    {/* Section title */}
+                    <View style={styles.dpTitleRow}>
+                      <View style={styles.dpTitleIcon}>
+                        <Ionicons name="book-outline" size={16} color={COLORS.primary} />
                       </View>
-                      <Text style={styles.purchaseDate}>
-                        {new Date(p.purchasedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                      </Text>
+                      <View>
+                        <Text style={styles.dpTitle}>Digital Passport</Text>
+                        <Text style={styles.dpSubtitle}>Your agrotourism journey</Text>
+                      </View>
                     </View>
-                  ))}
-                </View>
-              )}
 
-              {/* Logout */}
+                    {/* Passport data card */}
+                    <View style={styles.dpCard}>
+                      {/* Faint landscape background */}
+                      <Text style={styles.dpBgIllustration}>🌿🏡🌾</Text>
+
+                      {/* Data rows */}
+                      <View style={styles.dpRows}>
+                        <View style={styles.dpRow}>
+                          <Text style={styles.dpLabel}>Name</Text>
+                          <View style={styles.dpSep} />
+                          <Text style={styles.dpValue}>{firstName}</Text>
+                        </View>
+                        {surname && (
+                          <View style={styles.dpRow}>
+                            <Text style={styles.dpLabel}>Surname</Text>
+                            <View style={styles.dpSep} />
+                            <Text style={styles.dpValue}>{surname}</Text>
+                          </View>
+                        )}
+                        <View style={styles.dpRow}>
+                          <Text style={styles.dpLabel}>Country</Text>
+                          <View style={styles.dpSep} />
+                          <Text style={styles.dpValue}>{countryLabel}</Text>
+                        </View>
+                      </View>
+
+                      {/* AGRO PASSPORT watermark badge */}
+                      <View style={styles.dpWatermark}>
+                        <View style={styles.dpWatermarkCircle}>
+                          <Ionicons name="globe-outline" size={16} color={COLORS.primaryXLight} />
+                          <Text style={styles.dpWatermarkLine1}>AGRO</Text>
+                          <Text style={styles.dpWatermarkLine2}>PASSPORT</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Stamp Collection */}
+                    <View style={styles.stampSection}>
+                      <View style={styles.stampHeaderRow}>
+                        <Text style={styles.stampSectionTitle}>Stamp Collection</Text>
+                        <Text style={styles.stampCount}>{earned}/4 collected</Text>
+                      </View>
+                      <View style={styles.stampTrack}>
+                        {ppStamps.map((s, i) => (
+                          <React.Fragment key={s.id}>
+                            {/* Individual stamp with arc labels */}
+                            <View style={styles.stampWrap}>
+                              {/* Top arc label */}
+                              <Text style={[
+                                styles.stampArcText,
+                                s.earned ? { color: s.color } : { color: COLORS.border },
+                              ]}>
+                                {s.topText}
+                              </Text>
+
+                              {/* Circle */}
+                              <View style={[
+                                styles.ppStampRing,
+                                s.earned
+                                  ? { borderColor: s.color, borderStyle: 'solid' }
+                                  : { borderColor: COLORS.border, borderStyle: 'dashed' },
+                              ]}>
+                                <View style={[
+                                  styles.ppStampFill,
+                                  s.earned && { backgroundColor: s.color + '18' },
+                                ]}>
+                                  <Text style={[styles.ppStampEmoji, !s.earned && { opacity: 0.35 }]}>
+                                    {s.emoji}
+                                  </Text>
+                                </View>
+                                {s.earned && (
+                                  <View style={[styles.ppStampCheck, { backgroundColor: s.color }]}>
+                                    <Ionicons name="checkmark" size={8} color="#fff" />
+                                  </View>
+                                )}
+                              </View>
+
+                              {/* Bottom arc label */}
+                              <Text style={[
+                                styles.stampArcText,
+                                s.earned ? { color: s.color } : { color: COLORS.border },
+                              ]}>
+                                {s.botText}
+                              </Text>
+                            </View>
+
+                            {/* Dashed connector */}
+                            {i < ppStamps.length - 1 && (
+                              <View style={[
+                                styles.stampDash,
+                                s.earned && ppStamps[i + 1].earned && { borderColor: s.color },
+                              ]} />
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Share Passport — extra top margin */}
+                    <TouchableOpacity style={styles.sharePassportBtn} activeOpacity={0.85}>
+                      <Ionicons name="share-outline" size={18} color={COLORS.textMedium} />
+                      <Text style={styles.sharePassportText}>Share Passport</Text>
+                    </TouchableOpacity>
+                  </>
+                );
+              })()}
+
+              {/* Logout — always at bottom */}
               <View style={styles.profileDivider} />
               <TouchableOpacity
                 style={styles.logoutBtn}
@@ -1253,6 +1411,104 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#FFCCCC',
   },
   logoutText: { fontSize: 15, fontWeight: '700', color: COLORS.error },
+
+  // ── Passport sticker toggle button ──────────────────────────────────────
+  passportSticker: {
+    width: 66, height: 66, borderRadius: 14, overflow: 'hidden',
+    shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
+    flexShrink: 0,
+  },
+  passportStickerOn: {
+    shadowColor: '#C0392B', shadowOpacity: 0.4,
+  },
+  passportStickerGrad: {
+    flex: 1, padding: 2,
+  },
+  passportStickerInner: {
+    flex: 1, borderRadius: 12, borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.25)',
+    justifyContent: 'center', alignItems: 'center', gap: 1,
+  },
+  passportStickerEmoji: { fontSize: 20 },
+  passportStickerTop:   { fontSize: 7.5, fontWeight: '900', color: 'rgba(255,255,255,0.85)', letterSpacing: 0.5 },
+  passportStickerBot:   { fontSize: 7, fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: 0.5 },
+
+  // ── Digital Passport view ────────────────────────────────────────────────
+  dpTitleRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dpTitleIcon: {
+    width: 34, height: 34, borderRadius: 10,
+    backgroundColor: COLORS.primaryXLight, justifyContent: 'center', alignItems: 'center',
+  },
+  dpTitle:    { fontSize: 16, fontWeight: '800', color: COLORS.textDark },
+  dpSubtitle: { fontSize: 12, color: COLORS.textLight },
+
+  dpCard: {
+    backgroundColor: COLORS.cardAlt, borderRadius: 16,
+    borderWidth: 1, borderColor: COLORS.divider,
+    padding: 16, flexDirection: 'row',
+    alignItems: 'center', overflow: 'hidden', minHeight: 100,
+  },
+  dpBgIllustration: {
+    position: 'absolute', bottom: 8, right: 72,
+    fontSize: 36, opacity: 0.09, letterSpacing: 4,
+  },
+  dpRows: { flex: 1, gap: 10 },
+  dpRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dpLabel:{ fontSize: 13, color: COLORS.textLight, fontWeight: '500', width: 60 },
+  dpSep:  { width: 1, height: 14, backgroundColor: COLORS.border },
+  dpValue:{ fontSize: 14, fontWeight: '700', color: COLORS.textDark },
+
+  dpWatermark: { alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+  dpWatermarkCircle: {
+    width: 58, height: 58, borderRadius: 29,
+    borderWidth: 2, borderColor: COLORS.primary + '50',
+    backgroundColor: COLORS.primaryXLight,
+    justifyContent: 'center', alignItems: 'center', gap: 1,
+  },
+  dpWatermarkLine1: { fontSize: 9, fontWeight: '900', color: COLORS.primary, letterSpacing: 1 },
+  dpWatermarkLine2: { fontSize: 7, fontWeight: '700', color: COLORS.primaryLight, letterSpacing: 0.5 },
+
+  // ── Stamp Collection ─────────────────────────────────────────────────────
+  stampSection:      { gap: 14 },
+  stampHeaderRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stampSectionTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textDark },
+  stampCount:        { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
+  stampTrack:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+
+  stampWrap:    { alignItems: 'center', gap: 4 },
+  stampArcText: { fontSize: 7, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase' },
+
+  ppStampRing: {
+    width: 64, height: 64, borderRadius: 32,
+    borderWidth: 2.5, justifyContent: 'center', alignItems: 'center',
+    position: 'relative',
+  },
+  ppStampFill: {
+    width: 54, height: 54, borderRadius: 27,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  ppStampEmoji: { fontSize: 24 },
+  ppStampCheck: {
+    position: 'absolute', bottom: -2, right: -2,
+    width: 18, height: 18, borderRadius: 9,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: COLORS.card,
+  },
+  stampDash: {
+    flex: 1, height: 0, borderTopWidth: 1.5,
+    borderColor: COLORS.divider, borderStyle: 'dashed',
+    marginHorizontal: 3, marginTop: 18,
+  },
+
+  // ── Share Passport ───────────────────────────────────────────────────────
+  sharePassportBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: COLORS.cardAlt, borderRadius: 14, paddingVertical: 13,
+    borderWidth: 1, borderColor: COLORS.divider,
+    marginTop: 8,
+  },
+  sharePassportText: { fontSize: 14, fontWeight: '700', color: COLORS.textMedium },
 
   // ── Subscription Modal ──────────────────────────────────────────────────
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
